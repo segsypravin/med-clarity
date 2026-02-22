@@ -1,0 +1,14 @@
+{
+  "name": "med-clarity",
+  "version": "1.0.0",
+  "description": "MED Clarity – Smart Health Report Simplifier",
+  "scripts": {
+    "dev": "concurrently --names \"BACKEND,FRONTEND\" --prefix-colors \"red,blue\" \"npm run dev --prefix backend\" \"npm run dev --prefix frontend\"",
+    "start:backend": "npm run start --prefix backend",
+    "start:frontend": "npm run dev --prefix frontend",
+    "install:all": "npm install --prefix backend && npm install --prefix frontend"
+  },
+  "devDependencies": {
+    "concurrently": "^9.2.1"
+  }
+}
