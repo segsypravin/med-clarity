@@ -65,33 +65,6 @@ export default function Login() {
                         ))}
                     </div>
 
-                    {/* Floating stat cards */}
-                    <div className="login-stat-cards">
-                        <div className="login-stat-card">
-                            <span className="login-stat-num">50K+</span>
-                            <span className="login-stat-lbl">Reports Analyzed</span>
-                        </div>
-                        <div className="login-stat-card">
-                            <span className="login-stat-num">98%</span>
-                            <span className="login-stat-lbl">Accuracy</span>
-                        </div>
-                        <div className="login-stat-card">
-                            <span className="login-stat-num">4.9★</span>
-                            <span className="login-stat-lbl">User Rating</span>
-                        </div>
-                    </div>
-                </div>
-
-                {/* Testimonial quote */}
-                <div className="login-testimonial">
-                    <p className="login-testimonial-text">"MED Clarity changed how I manage my health. I actually understand my reports now!"</p>
-                    <div className="login-testimonial-author">
-                        <div className="login-testimonial-avatar">PS</div>
-                        <div>
-                            <div className="login-testimonial-name">Priya Sharma</div>
-                            <div className="login-testimonial-role">Patient</div>
-                        </div>
-                    </div>
                 </div>
             </div>
 

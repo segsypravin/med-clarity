@@ -2,11 +2,7 @@ import { FileText, Activity, TrendingUp, Users, ArrowRight, Clock } from 'lucide
 import { Link } from 'react-router-dom';
 import { StatCard, Badge, HealthScore } from '../components/ui/index.jsx';
 
-const recentReports = [
-    { name: 'Blood_Test_Report.pdf', date: 'Feb 21, 2026', type: 'Blood Report', status: 'success', score: 82 },
-    { name: 'Chest_XRay_Feb.jpg', date: 'Feb 18, 2026', type: 'X-Ray', status: 'warning', score: 61 },
-    { name: 'CT_Scan_Abdomen.jpg', date: 'Feb 10, 2026', type: 'CT Scan', status: 'error', score: 38 },
-];
+const recentReports = [];
 
 const statusMap = {
     success: { label: 'Normal', type: 'success' },
@@ -30,28 +26,34 @@ export default function Dashboard() {
             <div className="page-body animate-fade-up">
                 {/* Stats */}
                 <div className="stat-grid">
-                    <StatCard icon={<FileText size={22} />} label="Total Reports" value="3" sub="All time uploads" colorClass="red" />
-                    <StatCard icon={<Activity size={22} />} label="Latest Health Score" value="82" sub="Blood test · Feb 21" colorClass="green" />
-                    <StatCard icon={<TrendingUp size={22} />} label="Analyses Done" value="3" sub="AI-powered insights" colorClass="blue" />
-                    <StatCard icon={<Users size={22} />} label="Doctors Nearby" value="12" sub="Based on your location" colorClass="amber" />
+                    <StatCard icon={<FileText size={22} />} label="Total Reports" value="0" sub="All time uploads" colorClass="red" />
+                    <StatCard icon={<Activity size={22} />} label="Latest Health Score" value="-" sub="No reports yet" colorClass="green" />
+                    <StatCard icon={<TrendingUp size={22} />} label="Analyses Done" value="0" sub="AI-powered insights" colorClass="blue" />
+                    <StatCard icon={<Users size={22} />} label="Doctors Nearby" value="0" sub="Based on your location" colorClass="amber" />
                 </div>
 
                 <div className="grid-2">
                     {/* Health Score */}
                     <div className="card card-p">
                         <h2 className="section-title">Latest Health Score</h2>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '2rem', marginTop: '1rem' }}>
-                            <HealthScore score={82} size={130} />
-                            <div>
-                                <Badge type="success" dot>Normal</Badge>
-                                <p style={{ marginTop: '0.75rem', fontSize: '0.9rem', color: 'var(--text-muted)', lineHeight: '1.6' }}>
-                                    Your blood test results look great. Hemoglobin and WBC levels are within normal range.
-                                </p>
-                                <Link to="/results" className="btn btn-outline btn-sm" style={{ marginTop: '1rem', display: 'inline-flex' }}>
-                                    View Full Results <ArrowRight size={14} />
-                                </Link>
+                        {recentReports.length > 0 ? (
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '2rem', marginTop: '1rem' }}>
+                                <HealthScore score={82} size={130} />
+                                <div>
+                                    <Badge type="success" dot>Normal</Badge>
+                                    <p style={{ marginTop: '0.75rem', fontSize: '0.9rem', color: 'var(--text-muted)', lineHeight: '1.6' }}>
+                                        Your blood test results look great. Hemoglobin and WBC levels are within normal range.
+                                    </p>
+                                    <Link to="/results" className="btn btn-outline btn-sm" style={{ marginTop: '1rem', display: 'inline-flex' }}>
+                                        View Full Results <ArrowRight size={14} />
+                                    </Link>
+                                </div>
                             </div>
-                        </div>
+                        ) : (
+                            <div style={{ padding: '2rem 1rem', textAlign: 'center', color: 'var(--text-muted)' }}>
+                                <p>No health score available. Upload a report to get started.</p>
+                            </div>
+                        )}
                     </div>
 
                     {/* Quick Actions */}
@@ -105,7 +107,7 @@ export default function Dashboard() {
                                 </tr>
                             </thead>
                             <tbody>
-                                {recentReports.map((r) => (
+                                {recentReports.length > 0 ? recentReports.map((r) => (
                                     <tr key={r.name}>
                                         <td style={{ fontWeight: '500', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                                             <FileText size={15} color="var(--text-muted)" /> {r.name}
@@ -118,7 +120,13 @@ export default function Dashboard() {
                                             <Link to="/results" className="btn btn-outline btn-sm">View</Link>
                                         </td>
                                     </tr>
-                                ))}
+                                )) : (
+                                    <tr>
+                                        <td colSpan="6" style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-muted)' }}>
+                                            No recent reports found.
+                                        </td>
+                                    </tr>
+                                )}
                             </tbody>
                         </table>
                     </div>

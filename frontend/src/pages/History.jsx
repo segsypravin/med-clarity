@@ -3,13 +3,7 @@ import { FileText, Trash2, Eye } from 'lucide-react';
 import { Badge, EmptyState } from '../components/ui/index.jsx';
 import { Link } from 'react-router-dom';
 
-const SAMPLE_HISTORY = [
-    { id: 1, name: 'Blood_Test_Report.pdf', date: 'Feb 21, 2026', type: 'Blood Report', status: 'normal', score: 82, size: '1.2 MB' },
-    { id: 2, name: 'Chest_XRay_Feb.jpg', date: 'Feb 18, 2026', type: 'X-Ray', status: 'moderate', score: 61, size: '3.4 MB' },
-    { id: 3, name: 'CT_Scan_Abdomen.jpg', date: 'Feb 10, 2026', type: 'CT Scan', status: 'high', score: 38, size: '5.8 MB' },
-    { id: 4, name: 'Lipid_Panel_Jan.pdf', date: 'Jan 30, 2026', type: 'Blood Report', status: 'moderate', score: 54, size: '0.9 MB' },
-    { id: 5, name: 'Thyroid_Profile.pdf', date: 'Jan 12, 2026', type: 'Blood Report', status: 'normal', score: 78, size: '1.1 MB' },
-];
+const SAMPLE_HISTORY = [];
 
 const statusMap = {
     normal: { label: 'Normal', type: 'success' },

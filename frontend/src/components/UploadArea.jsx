@@ -36,15 +36,33 @@ export default function UploadArea({ onSuccess }) {
     const handleUpload = async () => {
         if (!file) return;
         setStatus('uploading');
+        setMessage('Uploading file...');
         const formData = new FormData();
         formData.append('report', file);
         try {
             const res = await fetch('http://localhost:5000/api/upload', { method: 'POST', body: formData });
             const data = await res.json();
             if (res.ok) {
-                setStatus('success');
-                setMessage(data.message || 'Report uploaded successfully!');
-                onSuccess?.(data);
+                // Post upload success, now trigger analyze
+                setMessage('Extracting text with AI... this may take up to 30s for images.');
+
+                const analyzeRes = await fetch('http://localhost:5000/api/analyze', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ reportId: data.file.id, filename: data.file.filename })
+                });
+
+                const analyzeData = await analyzeRes.json();
+
+                if (analyzeRes.ok) {
+                    setStatus('success');
+                    setMessage('Text extracted successfully!');
+                    onSuccess?.({ ...data, analyze: analyzeData });
+                    navigate('/results', { state: { result: analyzeData } });
+                } else {
+                    setStatus('error');
+                    setMessage(analyzeData.message || 'Analysis failed.');
+                }
             } else {
                 setStatus('error');
                 setMessage(data.message || 'Upload failed.');
@@ -115,7 +133,7 @@ export default function UploadArea({ onSuccess }) {
 
                 {status === 'uploading' && (
                     <button className="btn btn-primary btn-lg" style={{ width: '100%' }} disabled>
-                        <Spinner size={18} /> Uploading…
+                        <Spinner size={18} /> {message}
                     </button>
                 )}
 

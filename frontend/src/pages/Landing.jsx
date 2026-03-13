@@ -40,33 +40,9 @@ const steps = [
     { num: '04', title: 'Track Your Health', desc: 'Save reports, view trends, and share with your doctor.' },
 ];
 
-const testimonials = [
-    {
-        name: 'Priya Sharma',
-        role: 'Patient',
-        avatar: 'PS',
-        text: 'I finally understand my blood work! MED Clarity turned pages of confusing numbers into clear, actionable advice.',
-    },
-    {
-        name: 'Dr. Arjun Mehta',
-        role: 'Cardiologist',
-        avatar: 'AM',
-        text: 'I recommend this to all my patients. The summaries are accurate and help patients come to appointments prepared.',
-    },
-    {
-        name: 'Sarah Johnson',
-        role: 'Caregiver',
-        avatar: 'SJ',
-        text: 'Managing my mother\'s health records has never been easier. The trend tracking feature is a game changer.',
-    },
-];
+const testimonials = [];
 
-const stats = [
-    { value: '50K+', label: 'Reports Simplified' },
-    { value: '98%', label: 'Accuracy Rate' },
-    { value: '4.9★', label: 'User Rating' },
-    { value: '<30s', label: 'Processing Time' },
-];
+const stats = [];
 
 export default function Landing() {
     const navigate = useNavigate();
@@ -142,20 +118,19 @@ export default function Landing() {
                         <div className="mockup-header">
                             <div className="mockup-icon">📄</div>
                             <div>
-                                <div className="mockup-title">Blood Panel Report</div>
-                                <div className="mockup-sub">Uploaded 2 mins ago</div>
+                                <div className="mockup-title">Sample Medical Report</div>
+                                <div className="mockup-sub">Ready for analysis...</div>
                             </div>
-                            <span className="badge badge-success">✓ Analyzed</span>
                         </div>
                         <div className="mockup-divider" />
-                        <div className="mockup-row"><span className="mockup-key">Hemoglobin</span><span className="mockup-val mockup-ok">Normal ✔</span></div>
-                        <div className="mockup-row"><span className="mockup-key">Glucose (Fasting)</span><span className="mockup-val mockup-warn">Slightly High ⚠</span></div>
-                        <div className="mockup-row"><span className="mockup-key">LDL Cholesterol</span><span className="mockup-val mockup-ok">Optimal ✔</span></div>
-                        <div className="mockup-row"><span className="mockup-key">Vitamin D</span><span className="mockup-val mockup-err">Low — Action needed</span></div>
+                        <div className="mockup-row"><span className="mockup-key" style={{ width: '40%', height: '12px', background: 'var(--surface)', borderRadius: '4px' }}></span><span className="mockup-val" style={{ width: '20%', height: '12px', background: 'var(--surface)', borderRadius: '4px' }}></span></div>
+                        <div className="mockup-row"><span className="mockup-key" style={{ width: '60%', height: '12px', background: 'var(--surface)', borderRadius: '4px' }}></span><span className="mockup-val" style={{ width: '30%', height: '12px', background: 'var(--surface)', borderRadius: '4px' }}></span></div>
+                        <div className="mockup-row"><span className="mockup-key" style={{ width: '50%', height: '12px', background: 'var(--surface)', borderRadius: '4px' }}></span><span className="mockup-val" style={{ width: '25%', height: '12px', background: 'var(--surface)', borderRadius: '4px' }}></span></div>
+                        <div className="mockup-row"><span className="mockup-key" style={{ width: '30%', height: '12px', background: 'var(--surface)', borderRadius: '4px' }}></span><span className="mockup-val" style={{ width: '15%', height: '12px', background: 'var(--surface)', borderRadius: '4px' }}></span></div>
                         <div className="mockup-divider" />
                         <div className="mockup-summary">
                             <span className="mockup-summary-label">AI Summary</span>
-                            <p className="mockup-summary-text">Your report looks mostly healthy! Your Vitamin D is low — consider a supplement. Glucose is borderline; reducing sugar intake is advised.</p>
+                            <p className="mockup-summary-text">Upload a report to see an easy-to-understand, personalized AI summary right here.</p>
                         </div>
                     </div>
                 </div>
@@ -202,29 +177,31 @@ export default function Landing() {
             </section>
 
             {/* ── TESTIMONIALS ── */}
-            <section id="testimonials" className="landing-section">
-                <div className="landing-section-inner">
-                    <div className="section-header">
-                        <span className="section-eyebrow">Testimonials</span>
-                        <h2 className="section-heading">Loved by patients &amp; doctors</h2>
-                    </div>
-                    <div className="testimonials-grid">
-                        {testimonials.map(t => (
-                            <div key={t.name} className="testimonial-card">
-                                <div className="testimonial-quote">"</div>
-                                <p className="testimonial-text">{t.text}</p>
-                                <div className="testimonial-author">
-                                    <div className="testimonial-avatar">{t.avatar}</div>
-                                    <div>
-                                        <div className="testimonial-name">{t.name}</div>
-                                        <div className="testimonial-role">{t.role}</div>
+            {testimonials.length > 0 && (
+                <section id="testimonials" className="landing-section">
+                    <div className="landing-section-inner">
+                        <div className="section-header">
+                            <span className="section-eyebrow">Testimonials</span>
+                            <h2 className="section-heading">Loved by patients &amp; doctors</h2>
+                        </div>
+                        <div className="testimonials-grid">
+                            {testimonials.map(t => (
+                                <div key={t.name} className="testimonial-card">
+                                    <div className="testimonial-quote">"</div>
+                                    <p className="testimonial-text">{t.text}</p>
+                                    <div className="testimonial-author">
+                                        <div className="testimonial-avatar">{t.avatar}</div>
+                                        <div>
+                                            <div className="testimonial-name">{t.name}</div>
+                                            <div className="testimonial-role">{t.role}</div>
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
-                        ))}
+                            ))}
+                        </div>
                     </div>
-                </div>
-            </section>
+                </section>
+            )}
 
             {/* ── CTA BANNER ── */}
             <section className="cta-banner">
