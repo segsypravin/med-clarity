@@ -9,6 +9,7 @@ const navItems = [
         label: 'Main', items: [
             { to: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
             { to: '/upload', icon: Upload, label: 'Upload Report' },
+            { to: '/scan-upload', icon: Activity, label: 'Scan Analysis' },
             { to: '/results', icon: ClipboardList, label: 'My Results' },
             { to: '/history', icon: History, label: 'History' },
         ]
@@ -61,20 +62,6 @@ export default function Sidebar() {
 
             {/* Bottom */}
             <div className="sidebar-bottom">
-                <div style={{
-                    background: 'linear-gradient(135deg, #fef2f2, #fff5f5)',
-                    border: '1px solid rgba(192,21,42,0.15)',
-                    borderRadius: '0.75rem',
-                    padding: '0.875rem',
-                    marginBottom: '0.75rem',
-                }}>
-                    <p style={{ fontSize: '0.78rem', fontWeight: '600', color: '#c0152a', marginBottom: '0.2rem' }}>
-                        Phase 1 – Demo
-                    </p>
-                    <p style={{ fontSize: '0.72rem', color: '#6b7280', lineHeight: '1.4' }}>
-                        AI analysis, OCR & TTS coming in Phase 2.
-                    </p>
-                </div>
                 <button className="btn btn-ghost" style={{ width: '100%', justifyContent: 'flex-start', gap: '0.75rem' }}>
                     <LogOut size={16} />
                     <span style={{ fontSize: '0.875rem' }}>Sign Out</span>
