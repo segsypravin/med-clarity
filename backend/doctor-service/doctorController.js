@@ -1,17 +1,9 @@
-const express = require('express');
-const router = express.Router();
-
 /**
- * GET /api/get-doctors
- *
- * Query params:
- *   lat            — latitude  (required)
- *   lng            — longitude (required)
- *   specialization — e.g. "cardiologist" (optional)
- *
- * Proxies the request to Geoapify Places API and returns the results.
+ * Controller for Doctor Service
+ * Handles fetching nearby doctors using Geoapify
  */
-router.get('/', async (req, res) => {
+
+exports.getNearbyDoctors = async (req, res) => {
     try {
         const { lat, lng } = req.query;
 
@@ -94,6 +86,4 @@ router.get('/', async (req, res) => {
             message: 'Internal server error while fetching doctors.',
         });
     }
-});
-
-module.exports = router;
+};

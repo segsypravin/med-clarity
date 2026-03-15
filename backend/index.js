@@ -23,7 +23,7 @@ app.use('/api/upload', require('./routes/upload'));
 app.use('/api/analyze', require('./routes/analyze'));
 app.use('/api/history', require('./routes/history'));
 app.use('/api/doctors', require('./routes/doctors'));
-app.use('/api/get-doctors', require('./routes/getDoctors'));
+app.use('/api/get-doctors', require('./doctor-service/doctorRoutes'));
 app.use('/api/settings', require('./routes/settings'));
 
 // ── Root ──────────────────────────────────────────────────────────────────────

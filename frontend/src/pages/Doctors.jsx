@@ -68,6 +68,16 @@ export default function Doctors() {
     const [error, setError] = useState(null);
     const [userCoords, setUserCoords] = useState(null);
 
+    // ── Booking Modal State ───────────────────────────────────────────────────
+    const [bookingDoctor, setBookingDoctor] = useState(null);
+    const [bookingDate, setBookingDate] = useState('Tomorrow');
+    const [bookingTime, setBookingTime] = useState('10:00 AM');
+    
+    const handleConfirmBooking = () => {
+        alert(`Appointment booked successfully!\n\nDoctor: ${bookingDoctor.name}\nDate: ${bookingDate}\nTime: ${bookingTime}`);
+        setBookingDoctor(null);
+    };
+
     // ── Get user location on mount ────────────────────────────────────────────
     useEffect(() => {
         if (!navigator.geolocation) {
@@ -261,7 +271,7 @@ export default function Doctors() {
                                             </a>
                                         )}
                                         <button className="btn btn-outline btn-sm" style={{ flex: 1 }}
-                                            onClick={() => alert('Appointment booking coming in Phase 2!')}>
+                                            onClick={() => setBookingDoctor(d)}>
                                             Book Slot
                                         </button>
                                     </div>
@@ -291,6 +301,56 @@ export default function Doctors() {
                         </p>
                     </div>
                 </div>
+
+                {/* Booking Modal Overlay */}
+                {bookingDoctor && (
+                  <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 9999 }}>
+                    
+                    {/* Dark Blur Backdrop */}
+                    <div 
+                       style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', backgroundColor: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)' }} 
+                       onClick={() => setBookingDoctor(null)} 
+                    ></div>
+
+                    {/* White Modal Box */}
+                    <div style={{ position: 'relative', backgroundColor: '#ffffff', padding: '32px', borderRadius: '12px', zIndex: 10000, width: '400px', maxWidth: '90%', color: '#000000', boxShadow: '0 10px 25px rgba(0,0,0,0.2)' }}>
+                      
+                      <h3 style={{ marginTop: 0, fontSize: '20px', fontWeight: 'bold', marginBottom: '16px' }}>Book Appointment</h3>
+                      <p style={{ marginBottom: '20px' }}>Booking slot for: {bookingDoctor.name}</p>
+                      
+                      <div className="form-group" style={{ marginBottom: '16px' }}>
+                          <label style={{ color: '#000000', display: 'block', marginBottom: '8px' }}>Date</label>
+                          <select value={bookingDate} onChange={(e) => setBookingDate(e.target.value)} style={{ width: '100%', padding: '8px', color: '#000000', backgroundColor: '#ffffff', border: '1px solid #ccc', borderRadius: '4px' }}>
+                              <option>Today</option>
+                              <option>Tomorrow</option>
+                              <option>In 2 Days</option>
+                              <option>Next Week</option>
+                          </select>
+                      </div>
+
+                      <div className="form-group" style={{ marginBottom: '24px' }}>
+                          <label style={{ color: '#000000', display: 'block', marginBottom: '8px' }}>Time Slot</label>
+                          <select value={bookingTime} onChange={(e) => setBookingTime(e.target.value)} style={{ width: '100%', padding: '8px', color: '#000000', backgroundColor: '#ffffff', border: '1px solid #ccc', borderRadius: '4px' }}>
+                              <option>10:00 AM</option>
+                              <option>11:30 AM</option>
+                              <option>02:00 PM</option>
+                              <option>04:30 PM</option>
+                              <option>06:00 PM</option>
+                          </select>
+                      </div>
+
+                      <div style={{ display: 'flex', gap: '12px', marginTop: '16px' }}>
+                          <button className="btn btn-ghost" style={{ flex: 1, color: '#4b5563', border: '1px solid #ccc' }} onClick={() => setBookingDoctor(null)}>
+                              Cancel
+                          </button>
+                          <button className="btn btn-primary" style={{ flex: 2 }} onClick={handleConfirmBooking}>
+                              Confirm Booking
+                          </button>
+                      </div>
+                      
+                    </div>
+                  </div>
+                )}
             </div>
         </>
     );
