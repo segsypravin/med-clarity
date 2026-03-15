@@ -2,43 +2,41 @@ require('dotenv').config();
 
 const express = require('express');
 const cors = require('cors');
-const path = require('path');
-const errorHandler = require('./middleware/errorHandler');
 
 const app = express();
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 3001;
 
 // ── Middleware ────────────────────────────────────────────────────────────────
 app.use(cors({ origin: 'http://localhost:5173', credentials: true }));
 app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
 
 // ── Health Check ──────────────────────────────────────────────────────────────
 app.get('/api/health', (_req, res) => {
-    res.json({ status: 'ok', app: 'MED Clarity API', version: '1.0.0', phase: 1 });
+    res.json({ status: 'ok', app: 'MED Clarity Places Server', version: '1.0.0' });
 });
 
 // ── Routes ────────────────────────────────────────────────────────────────────
-app.use('/api/upload', require('./routes/upload'));
-app.use('/api/analyze', require('./routes/analyze'));
-app.use('/api/history', require('./routes/history'));
-app.use('/api/doctors', require('./routes/doctors'));
-app.use('/api/get-doctors', require('./doctor-service/doctorRoutes'));
-app.use('/api/settings', require('./routes/settings'));
+app.use('/api/get-doctors', require('./routes/getDoctors'));
 
 // ── Root ──────────────────────────────────────────────────────────────────────
 app.get('/', (_req, res) => {
     res.json({
-        message: 'MED Clarity API is running 🚀',
-        endpoints: ['/api/health', '/api/upload', '/api/analyze', '/api/history', '/api/doctors', '/api/get-doctors', '/api/settings'],
+        message: 'MED Clarity Places Server is running 🚀',
+        endpoints: ['/api/health', '/api/get-doctors'],
     });
 });
 
-// ── Error Handler (must be last) ──────────────────────────────────────────────
-app.use(errorHandler);
+// ── Global Error Handler ──────────────────────────────────────────────────────
+app.use((err, _req, res, _next) => {
+    console.error('[Error]', err.message);
+    res.status(err.status || 500).json({
+        success: false,
+        message: err.message || 'An unexpected server error occurred.',
+    });
+});
 
 // ── Start Server ──────────────────────────────────────────────────────────────
 app.listen(PORT, () => {
-    console.log(`\n✅ MED Clarity Backend running at http://localhost:${PORT}`);
+    console.log(`\n✅ MED Clarity Places Server running at http://localhost:${PORT}`);
     console.log(`   Health check: http://localhost:${PORT}/api/health\n`);
 });
