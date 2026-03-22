@@ -605,6 +605,16 @@ textarea:focus {
   animation: spin 0.8s linear infinite;
 }
 
+@keyframes pulse-audio {
+  0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(192, 21, 42, 0.4); }
+  70% { transform: scale(1.05); box-shadow: 0 0 0 10px rgba(192, 21, 42, 0); }
+  100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(192, 21, 42, 0); }
+}
+
+.pulse-audio {
+  animation: pulse-audio 1.5s infinite;
+}
+
 /* ── DOCTOR CARDS ── */
 .doctor-card {
   background: var(--surface);

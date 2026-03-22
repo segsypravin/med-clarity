@@ -2,8 +2,8 @@ const express = require('express');
 const router = express.Router();
 const path = require('path');
 const fs = require('fs');
-
-const pdfParse = require('pdf-parse');
+const axios = require('axios');
+const FormData = require('form-data');
 
 /**
  * POST /api/analyze
@@ -11,7 +11,7 @@ const pdfParse = require('pdf-parse');
  * Extacts text using OCR or pdf-parse.
  */
 router.post('/', async (req, res) => {
-    const { reportId, filename } = req.body;
+    const { reportId, filename, lang = 'en' } = req.body;
 
     if (!reportId || !filename) {
         return res.status(400).json({ success: false, message: 'reportId and filename are required.' });
@@ -23,23 +23,20 @@ router.post('/', async (req, res) => {
     }
 
     try {
-        let extractedText = '';
-        const ext = path.extname(filename).toLowerCase();
+        const formData = new FormData();
+        formData.append('file', fs.createReadStream(filePath));
+        formData.append('lang', lang);
 
-        if (ext === '.pdf') {
-            const dataBuffer = fs.readFileSync(filePath);
-            const pdfData = await pdfParse(dataBuffer);
-            extractedText = pdfData.text;
-        } else {
-            return res.status(400).json({ success: false, message: 'Image OCR is currently disabled. Please upload a PDF.' });
-        }
+        const response = await axios.post('http://127.0.0.1:8000/analyze_report', formData, {
+            headers: formData.getHeaders()
+        });
 
         res.json({
             status: "success",
-            extracted_text: extractedText.trim()
+            result: response.data
         });
     } catch (err) {
-        console.error('OCR Error:', err);
+        console.error('OCR Error:', err.message);
         res.status(500).json({ success: false, message: 'OCR analysis failed due to server error.' });
     }
 });
@@ -50,6 +47,25 @@ router.get('/:reportId', (req, res) => {
         message: 'Analysis retrieval by ID coming in Phase 2.',
         reportId: req.params.reportId,
     });
+});
+
+router.post('/translate', async (req, res) => {
+    const { data, lang } = req.body;
+
+    try {
+        const response = await axios.post('http://127.0.0.1:8000/translate_result', {
+            data,
+            lang
+        });
+
+        res.json({
+            status: "success",
+            result: response.data
+        });
+    } catch (err) {
+        console.error('Translation Error:', err.message);
+        res.status(500).json({ success: false, message: 'Translation failed.' });
+    }
 });
 
 module.exports = router;

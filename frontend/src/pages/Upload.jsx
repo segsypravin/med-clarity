@@ -1,20 +1,23 @@
 import UploadArea from '../components/UploadArea';
 import { FileText, Image as ImageIcon, Scan, Droplets } from 'lucide-react';
-
-const fileTypes = [
-    { icon: FileText, label: 'Medical Reports', desc: 'Blood tests, lab reports (PDF)' },
-    { icon: Scan, label: 'CT Scans', desc: 'CT scan images (JPG/PNG)' },
-    { icon: ImageIcon, label: 'X-Ray Images', desc: 'Chest, bone X-rays (JPG/PNG)' },
-    { icon: Droplets, label: 'Other Reports', desc: 'MRI, ultrasound, etc.' },
-];
+import { useLanguage } from '../context/LanguageContext';
 
 export default function Upload() {
+    const { t } = useLanguage();
+
+    const fileTypes = [
+        { icon: FileText, label: t('upload.file_types.medical_reports'), desc: t('upload.file_types.medical_reports_desc') },
+        { icon: Scan, label: t('upload.file_types.ct_scans'), desc: t('upload.file_types.ct_scans_desc') },
+        { icon: ImageIcon, label: t('upload.file_types.xray_images'), desc: t('upload.file_types.xray_images_desc') },
+        { icon: Droplets, label: t('upload.file_types.other_reports'), desc: t('upload.file_types.other_reports_desc') },
+    ];
+    
     return (
         <>
             <div className="page-header">
                 <div className="page-header-left">
-                    <h1>Upload Report</h1>
-                    <p>Upload a medical report or scan image for AI analysis.</p>
+                    <h1>{t('upload.title')}</h1>
+                    <p>{t('upload.subtitle')}</p>
                 </div>
             </div>
 
@@ -22,7 +25,7 @@ export default function Upload() {
                 <div className="grid-2" style={{ alignItems: 'start' }}>
                     {/* Upload Panel */}
                     <div className="card card-p-lg">
-                        <h2 className="section-title mb-3">Upload Your Report</h2>
+                        <h2 className="section-title mb-3">{t('upload.upload_your_report')}</h2>
                         <UploadArea />
                     </div>
 
@@ -30,7 +33,7 @@ export default function Upload() {
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
                         {/* Supported types */}
                         <div className="card card-p">
-                            <h3 className="section-title mb-2">Supported Report Types</h3>
+                            <h3 className="section-title mb-2">{t('upload.supported_types')}</h3>
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
                                 {fileTypes.map(({ icon: Icon, label, desc }) => (
                                     <div key={label} style={{ display: 'flex', alignItems: 'center', gap: '0.875rem' }}>
@@ -48,21 +51,15 @@ export default function Upload() {
 
                         {/* How it works */}
                         <div className="card card-p">
-                            <h3 className="section-title mb-2">How It Works</h3>
-                            {[
-                                ['1', 'Upload your report or scan image'],
-                                ['2', 'OCR extracts text from the document'],
-                                ['3', 'AI analyzes the health data'],
-                                ['4', 'Get a simple summary + health score'],
-                                ['5', 'Receive personalized suggestions'],
-                            ].map(([n, text]) => (
-                                <div key={n} style={{ display: 'flex', gap: '0.875rem', alignItems: 'flex-start', marginBottom: '0.75rem' }}>
+                            <h3 className="section-title mb-2">{t('upload.how_it_works')}</h3>
+                            {(t('upload.steps', { returnObjects: true }) || []).map((text, i) => (
+                                <div key={i} style={{ display: 'flex', gap: '0.875rem', alignItems: 'flex-start', marginBottom: '0.75rem' }}>
                                     <div style={{
                                         width: 24, height: 24, borderRadius: '50%', flexShrink: 0,
                                         background: 'linear-gradient(135deg, var(--primary), var(--secondary))',
                                         color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center',
                                         fontSize: '0.72rem', fontWeight: '700',
-                                    }}>{n}</div>
+                                    }}>{i + 1}</div>
                                     <p style={{ fontSize: '0.875rem', color: 'var(--text-muted)', paddingTop: '0.2rem' }}>{text}</p>
                                 </div>
                             ))}
@@ -76,10 +73,9 @@ export default function Upload() {
                         }}>
                             <span style={{ fontSize: '1.25rem' }}>🔒</span>
                             <div>
-                                <p style={{ fontWeight: '600', fontSize: '0.875rem', marginBottom: '0.2rem', color: 'var(--primary)' }}>Your data is secure</p>
+                                <p style={{ fontWeight: '600', fontSize: '0.875rem', marginBottom: '0.2rem', color: 'var(--primary)' }}>{t('upload.secure_note_title')}</p>
                                 <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', lineHeight: '1.5' }}>
-                                    Reports are processed securely. Files are not shared with third parties.
-                                    All communication is encrypted.
+                                    {t('upload.secure_note_desc')}
                                 </p>
                             </div>
                         </div>

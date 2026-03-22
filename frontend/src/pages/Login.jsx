@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { useLanguage } from '../context/LanguageContext';
 
 export default function Login() {
+    const { t } = useLanguage();
     const navigate = useNavigate();
     const location = useLocation();
     const [mode, setMode] = useState('signin'); // 'signin' | 'signup'
@@ -45,18 +47,18 @@ export default function Login() {
 
                 {/* Illustration content */}
                 <div className="login-left-content">
-                    <h2 className="login-left-title">Your health, finally<br /><span>clear and simple.</span></h2>
+                    <h2 className="login-left-title">{t('login.left_title', { defaultValue: 'Your health, finally clear and simple.' })}</h2>
                     <p className="login-left-desc">
-                        Upload any medical report and get instant, AI-powered summaries in plain English. No medical degree required.
+                        {t('login.left_desc', { defaultValue: 'Upload any medical report and get instant, AI-powered summaries in plain English.' })}
                     </p>
 
                     {/* Mini feature list */}
                     <div className="login-features">
                         {[
-                            ['⚡', 'Instant report analysis'],
-                            ['🔒', 'End-to-end encrypted'],
-                            ['👨‍⚕️', 'Connect with doctors'],
-                            ['📈', 'Track your health trends'],
+                            ['⚡', t('login.feat_instant')],
+                            ['🔒', t('login.feat_secure')],
+                            ['👨‍⚕️', t('login.feat_doctors')],
+                            ['📈', t('login.feat_track')],
                         ].map(([icon, text]) => (
                             <div key={text} className="login-feature-item">
                                 <span className="login-feature-icon">{icon}</span>
@@ -77,31 +79,31 @@ export default function Login() {
                             className={`login-tab${mode === 'signin' ? ' active' : ''}`}
                             onClick={() => setMode('signin')}
                         >
-                            Sign In
+                            {t('landing.sign_in')}
                         </button>
                         <button
                             className={`login-tab${mode === 'signup' ? ' active' : ''}`}
                             onClick={() => setMode('signup')}
                         >
-                            Create Account
+                            {t('login.create_account')}
                         </button>
                     </div>
 
                     <div className="login-form-header">
                         <h1 className="login-form-title">
-                            {mode === 'signin' ? 'Welcome back 👋' : 'Get started free 🚀'}
+                            {mode === 'signin' ? `${t('login.welcome')} 👋` : `${t('login.get_started_free')} 🚀`}
                         </h1>
                         <p className="login-form-subtitle">
                             {mode === 'signin'
-                                ? 'Sign in to access your health dashboard.'
-                                : 'Create your account in seconds — no credit card needed.'}
+                                ? t('login.sign_in_to_access')
+                                : t('login.signup_subtitle')}
                         </p>
                     </div>
 
                     <form className="login-form" onSubmit={handleSubmit}>
                         {mode === 'signup' && (
                             <div className="form-group">
-                                <label htmlFor="name">Full Name</label>
+                                <label htmlFor="name">{t('login.full_name')}</label>
                                 <div className="input-icon-wrap">
                                     <span className="input-icon">
                                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" /></svg>
@@ -120,7 +122,7 @@ export default function Login() {
                         )}
 
                         <div className="form-group">
-                            <label htmlFor="email">Email Address</label>
+                            <label htmlFor="email">{t('login.email')}</label>
                             <div className="input-icon-wrap">
                                 <span className="input-icon">
                                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" /><polyline points="22,6 12,13 2,6" /></svg>
@@ -139,9 +141,9 @@ export default function Login() {
 
                         <div className="form-group">
                             <div className="flex-between" style={{ marginBottom: '0.4rem' }}>
-                                <label htmlFor="password" style={{ marginBottom: 0 }}>Password</label>
+                                <label htmlFor="password" style={{ marginBottom: 0 }}>{t('login.password')}</label>
                                 {mode === 'signin' && (
-                                    <a href="#" className="login-forgot">Forgot password?</a>
+                                    <a href="#" className="login-forgot">{t('login.forgot_password')}</a>
                                 )}
                             </div>
                             <div className="input-icon-wrap">
@@ -152,7 +154,7 @@ export default function Login() {
                                     id="password"
                                     name="password"
                                     type={showPass ? 'text' : 'password'}
-                                    placeholder={mode === 'signup' ? 'Min. 8 characters' : '••••••••'}
+                                    placeholder={mode === 'signup' ? t('login.password_placeholder_signup', { defaultValue: 'Min. 8 characters' }) : '••••••••'}
                                     value={form.password}
                                     onChange={handleChange}
                                     required
@@ -172,7 +174,7 @@ export default function Login() {
                             <div className="login-terms">
                                 <input type="checkbox" id="terms" required />
                                 <label htmlFor="terms" style={{ display: 'inline', fontWeight: 400, fontSize: '0.83rem', color: 'var(--text-muted)' }}>
-                                    &nbsp;I agree to the <a href="#" className="login-forgot">Terms of Service</a> and <a href="#" className="login-forgot">Privacy Policy</a>
+                                    &nbsp;{t('login.agree_to')} <a href="#" className="login-forgot">{t('login.terms')}</a> {t('common.and', { defaultValue: 'and' })} <a href="#" className="login-forgot">{t('login.privacy')}</a>
                                 </label>
                             </div>
                         )}
@@ -186,15 +188,15 @@ export default function Login() {
                             {loading ? (
                                 <>
                                     <span className="animate-spin" style={{ width: 16, height: 16, border: '2px solid rgba(255,255,255,0.3)', borderTopColor: 'white', borderRadius: '50%', display: 'inline-block' }} />
-                                    Please wait…
+                                    {t('login.please_wait')}
                                 </>
-                            ) : mode === 'signin' ? 'Sign In to Dashboard' : 'Create My Account'}
+                            ) : mode === 'signin' ? t('login.sign_in_to_dash') : t('login.create_my_account')}
                         </button>
                     </form>
 
                     {/* Divider */}
                     <div className="login-divider">
-                        <span>or continue with</span>
+                        <span>{t('login.or_continue_with')}</span>
                     </div>
 
                     {/* Social buttons */}
@@ -210,18 +212,18 @@ export default function Login() {
                     </div>
 
                     <p className="login-switch">
-                        {mode === 'signin' ? "Don't have an account? " : 'Already have an account? '}
+                        {mode === 'signin' ? t('login.dont_have_account') : t('login.already_have_account')}
                         <button
                             className="login-switch-link"
                             onClick={() => setMode(mode === 'signin' ? 'signup' : 'signin')}
                         >
-                            {mode === 'signin' ? 'Sign up free' : 'Sign in'}
+                            {mode === 'signin' ? t('login.sign_up_free') : t('landing.sign_in')}
                         </button>
                     </p>
 
                     {/* Back to landing */}
                     <button className="login-back" onClick={() => navigate('/landing')}>
-                        ← Back to home
+                        {t('login.back_to_home')}
                     </button>
                 </div>
             </div>

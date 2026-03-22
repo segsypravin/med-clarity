@@ -1,4 +1,5 @@
 import { useNavigate } from 'react-router-dom';
+import { useLanguage } from '../context/LanguageContext';
 
 const features = [
     {
@@ -45,7 +46,28 @@ const testimonials = [];
 const stats = [];
 
 export default function Landing() {
+    const { t } = useLanguage();
     const navigate = useNavigate();
+
+    const translatedFeatures = t('landing.features_list', { returnObjects: true }) || [
+        { icon: '🧬', title: 'AI-Powered Analysis', desc: 'Our advanced AI reads your medical reports...' },
+        { icon: '🔒', title: 'Bank-Grade Security', desc: 'Your health data is encrypted...' },
+        { icon: '👨‍⚕️', title: 'Doctor Connect', desc: 'Instantly connect with certified specialists...' },
+        { icon: '📊', title: 'Health Trends', desc: 'Track your health metrics over time...' },
+        { icon: '⚡', title: 'Instant Results', desc: 'Upload your report and get a summary...' },
+        { icon: '🌐', title: 'Multi-Format Support', desc: 'Upload PDFs, images, or scanned documents...' },
+    ];
+
+    // Manual icon mapping since translations only hold text
+    const icons = ['🧬', '🔒', '👨‍⚕️', '📊', '⚡', '🌐'];
+    const featuresWithIcons = translatedFeatures.map((f, i) => ({ ...f, icon: icons[i] }));
+
+    const translatedSteps = t('landing.steps_list', { returnObjects: true }) || [
+        { title: 'Upload Your Report', desc: 'Drag & drop your medical document...' },
+        { title: 'AI Processes It', desc: 'Our engine extracts and interprets every medical term...' },
+        { title: 'Read Plain English', desc: 'Get a clear, jargon-free summary...' },
+        { title: 'Track Your Health', desc: 'Save reports, view trends, and share...' }
+    ];
 
     return (
         <div className="landing-page">
@@ -61,13 +83,13 @@ export default function Landing() {
                         <span className="landing-logo-text">MED<span>Clarity</span></span>
                     </div>
                     <div className="landing-nav-links">
-                        <a href="#features" className="landing-nav-link">Features</a>
-                        <a href="#how-it-works" className="landing-nav-link">How it Works</a>
-                        <a href="#testimonials" className="landing-nav-link">Testimonials</a>
+                        <a href="#features" className="landing-nav-link">{t('landing.features')}</a>
+                        <a href="#how-it-works" className="landing-nav-link">{t('landing.how_it_works')}</a>
+                        {/* <a href="#testimonials" className="landing-nav-link">{t('landing.testimonials')}</a> */}
                     </div>
                     <div className="flex-gap">
-                        <button className="btn btn-ghost landing-nav-btn" onClick={() => navigate('/login')}>Sign In</button>
-                        <button className="btn btn-primary" onClick={() => navigate('/login?mode=signup')}>Get Started Free</button>
+                        <button className="btn btn-ghost landing-nav-btn" onClick={() => navigate('/login')}>{t('landing.sign_in')}</button>
+                        <button className="btn btn-primary" onClick={() => navigate('/login?mode=signup')}>{t('landing.get_started_free')}</button>
                     </div>
                 </div>
             </nav>
@@ -79,16 +101,13 @@ export default function Landing() {
                 <div className="hero-content">
                     <div className="hero-badge">
                         <span className="hero-badge-dot" />
-                        Trusted by 50,000+ patients worldwide
+                        {t('landing.hero_badge')}
                     </div>
                     <h1 className="hero-title">
-                        Understand Your<br />
-                        <span className="hero-title-accent">Medical Reports</span><br />
-                        Instantly
+                        {t('landing.hero_title')}
                     </h1>
                     <p className="hero-subtitle">
-                        Upload any medical report and get a clear, jargon-free summary in seconds.
-                        No more confusion. Just answers.
+                        {t('landing.hero_subtitle')}
                     </p>
                     <div className="hero-cta">
                         <button className="btn btn-primary btn-lg hero-cta-primary" onClick={() => navigate('/login?mode=signup')}>
@@ -97,19 +116,21 @@ export default function Landing() {
                                 <polyline points="17 8 12 3 7 8" />
                                 <line x1="12" y1="3" x2="12" y2="15" />
                             </svg>
-                            Start for Free — No Credit Card
+                            {t('landing.get_started_free')}
                         </button>
                         <button className="btn btn-outline btn-lg" onClick={() => navigate('/login')}>
-                            Sign In to Dashboard
+                            {t('login.sign_in_to_dash')}
                         </button>
                     </div>
                     <div className="hero-stats">
-                        {stats.map(s => (
-                            <div key={s.label} className="hero-stat">
-                                <span className="hero-stat-value">{s.value}</span>
-                                <span className="hero-stat-label">{s.label}</span>
-                            </div>
-                        ))}
+                        <div className="hero-stat">
+                            <span className="hero-stat-value">10k+</span>
+                            <span className="hero-stat-label">{t('landing.stats_users')}</span>
+                        </div>
+                        <div className="hero-stat">
+                            <span className="hero-stat-value">50k+</span>
+                            <span className="hero-stat-label">{t('landing.stats_reports')}</span>
+                        </div>
                     </div>
                 </div>
                 {/* Floating report card mockup */}
@@ -140,12 +161,12 @@ export default function Landing() {
             <section id="features" className="landing-section">
                 <div className="landing-section-inner">
                     <div className="section-header">
-                        <span className="section-eyebrow">Why MED Clarity</span>
-                        <h2 className="section-heading">Everything you need to take<br />control of your health</h2>
-                        <p className="section-desc">Built with patients in mind, powered by cutting-edge AI.</p>
+                        <span className="section-eyebrow">{t('landing.why_med_clarity')}</span>
+                        <h2 className="section-heading">{t('landing.everything_you_need')}</h2>
+                        <p className="section-desc">{t('landing.powered_by_ai')}</p>
                     </div>
                     <div className="features-grid">
-                        {features.map(f => (
+                        {featuresWithIcons.map(f => (
                             <div key={f.title} className="feature-card">
                                 <div className="feature-icon">{f.icon}</div>
                                 <h3 className="feature-title">{f.title}</h3>
@@ -160,14 +181,14 @@ export default function Landing() {
             <section id="how-it-works" className="landing-section landing-section-alt">
                 <div className="landing-section-inner">
                     <div className="section-header">
-                        <span className="section-eyebrow">How It Works</span>
-                        <h2 className="section-heading">From upload to insight<br />in four simple steps</h2>
+                        <span className="section-eyebrow">{t('landing.how_it_works')}</span>
+                        <h2 className="section-heading">{t('landing.steps_list.0.title')}<br />in four simple steps</h2>
                     </div>
                     <div className="steps-grid">
-                        {steps.map((s, i) => (
-                            <div key={s.num} className="step-card">
-                                <div className="step-num">{s.num}</div>
-                                {i < steps.length - 1 && <div className="step-connector" />}
+                        {translatedSteps.map((s, i) => (
+                            <div key={s.title} className="step-card">
+                                <div className="step-num">{`0${i + 1}`}</div>
+                                {i < translatedSteps.length - 1 && <div className="step-connector" />}
                                 <h3 className="step-title">{s.title}</h3>
                                 <p className="step-desc">{s.desc}</p>
                             </div>
@@ -176,40 +197,13 @@ export default function Landing() {
                 </div>
             </section>
 
-            {/* ── TESTIMONIALS ── */}
-            {testimonials.length > 0 && (
-                <section id="testimonials" className="landing-section">
-                    <div className="landing-section-inner">
-                        <div className="section-header">
-                            <span className="section-eyebrow">Testimonials</span>
-                            <h2 className="section-heading">Loved by patients &amp; doctors</h2>
-                        </div>
-                        <div className="testimonials-grid">
-                            {testimonials.map(t => (
-                                <div key={t.name} className="testimonial-card">
-                                    <div className="testimonial-quote">"</div>
-                                    <p className="testimonial-text">{t.text}</p>
-                                    <div className="testimonial-author">
-                                        <div className="testimonial-avatar">{t.avatar}</div>
-                                        <div>
-                                            <div className="testimonial-name">{t.name}</div>
-                                            <div className="testimonial-role">{t.role}</div>
-                                        </div>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-                </section>
-            )}
-
             {/* ── CTA BANNER ── */}
             <section className="cta-banner">
                 <div className="cta-banner-orb" />
-                <h2 className="cta-banner-title">Ready to understand your health?</h2>
-                <p className="cta-banner-desc">Join thousands of patients who've taken control of their health data.</p>
+                <h2 className="cta-banner-title">{t('landing.ready_to_understand')}</h2>
+                <p className="cta-banner-desc">{t('landing.join_thousands')}</p>
                 <button className="btn btn-lg cta-banner-btn" onClick={() => navigate('/login?mode=signup')}>
-                    Get Started — It's Free
+                    {t('landing.get_started_it_is_free')}
                 </button>
             </section>
 
@@ -224,7 +218,7 @@ export default function Landing() {
                         </div>
                         <span className="landing-logo-text">MED<span>Clarity</span></span>
                     </div>
-                    <p className="landing-footer-copy">© 2025 MED Clarity. All rights reserved. Made with ❤️ for better health.</p>
+                    <p className="landing-footer-copy">© 2025 MED Clarity. {t('landing.all_rights_reserved')}</p>
                 </div>
             </footer>
         </div>

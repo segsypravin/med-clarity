@@ -1,5 +1,6 @@
 import { Activity, CheckCircle, Clock } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { useLanguage } from '../context/LanguageContext';
 
 const features = [
     { phase: 'Phase 1', status: 'done', list: ['Medical report upload (PDF/image/CT/X-ray)', 'File validation & secure storage', 'Basic health report display', 'Multi-page web interface', 'Red & white accessible UI'] },
@@ -11,12 +12,21 @@ const statusColor = { done: '#059669', upcoming: '#d97706' };
 const statusLabel = { done: 'Complete ✓', upcoming: 'Upcoming' };
 
 export default function About() {
+    const { t } = useLanguage();
+
+    const translatedUserList = t('about.user_list', { returnObjects: true }) || [
+        'Elderly patients with complex lab results',
+        'Rural or semi-urban users with limited medical knowledge',
+        'Patients who speak Hindi or regional languages',
+        'Caregivers managing a family member\'s health'
+    ];
+
     return (
         <>
             <div className="page-header">
                 <div className="page-header-left">
-                    <h1>About MED Clarity</h1>
-                    <p>Smart Health Report Simplifier — helping you understand your health.</p>
+                    <h1>{t('about.title')}</h1>
+                    <p>{t('about.subtitle')}</p>
                 </div>
             </div>
 
@@ -37,12 +47,10 @@ export default function About() {
                     </div>
                     <div style={{ flex: 1 }}>
                         <h2 style={{ fontSize: '1.5rem', fontWeight: '800', letterSpacing: '-0.03em', marginBottom: '0.5rem' }}>
-                            Smart Health Report Simplifier
+                            {t('about.app_name_full')}
                         </h2>
                         <p style={{ color: 'var(--text-muted)', fontSize: '0.95rem', lineHeight: '1.7', maxWidth: 600 }}>
-                            A web and mobile application that converts complex medical reports and scan images into simple,
-                            easy-to-understand health insights — designed for elderly and non-technical users with multilingual
-                            and audio support.
+                            {t('about.app_desc')}
                         </p>
                     </div>
                 </div>
@@ -50,17 +58,15 @@ export default function About() {
                 {/* Goals */}
                 <div className="grid-2 mb-4">
                     <div className="card card-p">
-                        <h2 className="section-title mb-2">🎯 Core Goal</h2>
+                        <h2 className="section-title mb-2">🎯 {t('about.core_goal')}</h2>
                         <p style={{ fontSize: '0.9rem', color: 'var(--text-muted)', lineHeight: '1.7' }}>
-                            Help normal users — especially elderly people and those without a medical background —
-                            understand what their doctor's reports mean, what their health status is, and what they should do next.
-                            No jargon, no confusion.
+                            {t('about.core_goal_desc')}
                         </p>
                     </div>
                     <div className="card card-p">
-                        <h2 className="section-title mb-2">👥 Target Users</h2>
+                        <h2 className="section-title mb-2">👥 {t('about.target_users')}</h2>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                            {['Elderly patients with complex lab results', 'Rural or semi-urban users with limited medical knowledge', 'Patients who speak Hindi or regional languages', 'Caregivers managing a family member\'s health'].map(u => (
+                            {translatedUserList.map(u => (
                                 <div key={u} style={{ display: 'flex', gap: '0.5rem', alignItems: 'flex-start', fontSize: '0.875rem', color: 'var(--text-muted)' }}>
                                     <CheckCircle size={14} color="var(--success)" style={{ flexShrink: 0, marginTop: 2 }} /> {u}
                                 </div>
@@ -70,14 +76,14 @@ export default function About() {
                 </div>
 
                 {/* Roadmap */}
-                <h2 className="section-title mb-3">Feature Roadmap</h2>
+                <h2 className="section-title mb-3">{t('about.roadmap')}</h2>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                     {features.map(({ phase, status, list }) => (
                         <div key={phase} className="card card-p" style={{ borderLeft: `4px solid ${statusColor[status]}` }}>
                             <div className="flex-between mb-2">
                                 <h3 style={{ fontWeight: '700', fontSize: '1rem' }}>{phase}</h3>
                                 <span style={{ fontSize: '0.78rem', fontWeight: '600', color: statusColor[status] }}>
-                                    {status === 'done' ? '✓ ' : '⏳ '}{statusLabel[status]}
+                                    {status === 'done' ? '✓ ' : '⏳ '}{status === 'done' ? t('common.success') : 'Upcoming'}
                                 </span>
                             </div>
                             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '0.35rem' }}>
@@ -96,7 +102,7 @@ export default function About() {
 
                 {/* Tech Stack */}
                 <div className="card card-p mt-4 mb-4">
-                    <h2 className="section-title mb-3">🛠 Technology Stack</h2>
+                    <h2 className="section-title mb-3">🛠 {t('about.tech_stack')}</h2>
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: '0.875rem' }}>
                         {[
                             ['Frontend', 'React + Vite'],
@@ -119,9 +125,9 @@ export default function About() {
                 </div>
 
                 <div style={{ textAlign: 'center', padding: '1.5rem', color: 'var(--text-muted)', fontSize: '0.85rem' }}>
-                    <p>MED Clarity v1.0 · Phase 1 Demo · Built with ❤️ for accessible healthcare</p>
+                    <p>{t('about.version_footer')}</p>
                     <Link to="/upload" className="btn btn-primary" style={{ marginTop: '1rem', display: 'inline-flex' }}>
-                        Get Started →
+                        {t('about.get_started')}
                     </Link>
                 </div>
             </div>

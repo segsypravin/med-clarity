@@ -2,6 +2,7 @@ import { useState, useRef } from 'react';
 import { Upload, FileText, Image, CheckCircle, AlertCircle, X } from 'lucide-react';
 import { Spinner } from './ui/index.jsx';
 import { useNavigate } from 'react-router-dom';
+import { useLanguage } from '../context/LanguageContext';
 
 const ACCEPTED_TYPES = {
     'application/pdf': { label: 'PDF Report', icon: FileText },
@@ -11,6 +12,7 @@ const ACCEPTED_TYPES = {
 };
 
 export default function UploadArea({ onSuccess }) {
+    const { language, t } = useLanguage();
     const [file, setFile] = useState(null);
     const [status, setStatus] = useState('idle');
     const [message, setMessage] = useState('');
@@ -36,7 +38,7 @@ export default function UploadArea({ onSuccess }) {
     const handleUpload = async () => {
         if (!file) return;
         setStatus('uploading');
-        setMessage('Uploading file...');
+        setMessage(t('common.processing'));
         const formData = new FormData();
         formData.append('report', file);
         try {
@@ -44,32 +46,56 @@ export default function UploadArea({ onSuccess }) {
             const data = await res.json();
             if (res.ok) {
                 // Post upload success, now trigger analyze
-                setMessage('Extracting text with AI... this may take up to 30s for images.');
+                setMessage(t('common.processing'));
 
                 const analyzeRes = await fetch('http://localhost:5000/api/analyze', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ reportId: data.file.id, filename: data.file.filename })
+                    body: JSON.stringify({ 
+                        reportId: data.file.id, 
+                        filename: data.file.filename,
+                        lang: language 
+                    })
                 });
 
                 const analyzeData = await analyzeRes.json();
 
                 if (analyzeRes.ok) {
+                    // 🎉 Sync with History API (Phase 1 In-Memory)
+                    try {
+                        await fetch('http://localhost:5000/api/history', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                name: data.file.originalName,
+                                filename: data.file.filename,
+                                date: new Date().toLocaleDateString(),
+                                type: 'Blood Report',
+                                status: (analyzeData.overall_status || 'Normal').toLowerCase(),
+                                score: analyzeData.health_score || 75,
+                                size: (data.file.size / 1024).toFixed(1) + ' KB',
+                                result: analyzeData // Full AI output for Results page viewing later
+                            })
+                        });
+                    } catch (historyErr) {
+                        console.error("Failed to save to history:", historyErr);
+                    }
+
                     setStatus('success');
-                    setMessage('Text extracted successfully!');
+                    setMessage(t('common.success'));
                     onSuccess?.({ ...data, analyze: analyzeData });
-                    navigate('/results', { state: { result: analyzeData } });
+                    navigate('/results', { state: { result: analyzeData, lang: language } });
                 } else {
                     setStatus('error');
-                    setMessage(analyzeData.message || 'Analysis failed.');
+                    setMessage(analyzeData.message || t('common.error'));
                 }
             } else {
                 setStatus('error');
-                setMessage(data.message || 'Upload failed.');
+                setMessage(data.message || t('common.error'));
             }
         } catch {
             setStatus('error');
-            setMessage('Cannot reach server. Make sure the backend is running.');
+            setMessage('Cannot reach server.');
         }
     };
 
@@ -104,7 +130,7 @@ export default function UploadArea({ onSuccess }) {
                             {ACCEPTED_TYPES[file.type]?.label ?? 'File'} · {(file.size / 1024 / 1024).toFixed(2)} MB
                         </p>
                         <button className="btn btn-ghost btn-sm" style={{ marginTop: '0.5rem', color: 'var(--error)' }} onClick={(e) => { e.stopPropagation(); reset(); }}>
-                            <X size={14} /> Remove
+                            <X size={14} /> {t('upload.remove')}
                         </button>
                     </div>
                 ) : (
@@ -113,11 +139,11 @@ export default function UploadArea({ onSuccess }) {
                             <Upload size={44} />
                         </div>
                         <p style={{ fontWeight: '600', fontSize: '1.1rem', marginBottom: '0.4rem' }}>
-                            Drag & drop your report here
+                            {t('upload.dropzone_title')}
                         </p>
-                        <p className="text-muted text-sm">PDF, JPG, PNG up to 10 MB · Medical reports, CT scans, X‑rays</p>
+                        <p className="text-muted text-sm">{t('upload.dropzone_subtitle')}</p>
                         <button className="btn btn-outline" style={{ marginTop: '1.25rem' }} onClick={() => fileInputRef.current?.click()}>
-                            Browse Files
+                            {t('upload.browse')}
                         </button>
                     </div>
                 )}
@@ -127,7 +153,7 @@ export default function UploadArea({ onSuccess }) {
             <div style={{ marginTop: '1.25rem' }}>
                 {status === 'idle' && (
                     <button className="btn btn-primary btn-lg" style={{ width: '100%' }} onClick={handleUpload} disabled={!file}>
-                        {file ? 'Analyze Report →' : 'Select a file first'}
+                        {file ? `${t('common.analyze_report')} →` : t('common.select_language')}
                     </button>
                 )}
 
@@ -148,7 +174,7 @@ export default function UploadArea({ onSuccess }) {
                             <CheckCircle size={18} /> {message}
                         </div>
                         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
-                            <button className="btn btn-primary" onClick={() => navigate('/results')}>View Results →</button>
+                            <button className="btn btn-primary" onClick={() => navigate('/results')}>{t('common.my_results')} →</button>
                             <button className="btn btn-outline" onClick={reset}>Upload Another</button>
                         </div>
                     </div>
