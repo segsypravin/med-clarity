@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import { Globe, Volume2, Accessibility, Bell, Shield, Smartphone } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
 

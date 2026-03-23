@@ -9,7 +9,6 @@ const features = [
 ];
 
 const statusColor = { done: '#059669', upcoming: '#d97706' };
-const statusLabel = { done: 'Complete ✓', upcoming: 'Upcoming' };
 
 export default function About() {
     const { t } = useLanguage();

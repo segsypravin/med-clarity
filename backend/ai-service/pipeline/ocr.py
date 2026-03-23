@@ -1,26 +1,41 @@
 import easyocr
 import numpy as np
 
-# Initialize the reader once to save time across multiple calls
 READER = None
 
 def get_reader():
     global READER
     if READER is None:
-        # Use English language, disable GPU if not available
-        READER = easyocr.Reader(['en'], gpu=False)
+        # Try GPU first, fall back to CPU automatically
+        try:
+            READER = easyocr.Reader(['en'], gpu=True)
+            print("[OCR] Using GPU acceleration.")
+        except Exception:
+            READER = easyocr.Reader(['en'], gpu=False)
+            print("[OCR] GPU unavailable, using CPU.")
     return READER
 
-def extract_text(image_path_or_array):
+
+def extract_text(image_path_or_array, confidence_threshold=0.4):
     """
-    Extracts text and bounding boxes from an image using EasyOCR.
+    Extracts text from an image using EasyOCR.
+    Filters out results with confidence below threshold (noise/artifacts).
     Returns: list of tuples: (bbox, text, confidence)
     """
     reader = get_reader()
-    
-    # Read text 
-    # reader.readtext accepts both file path and numpy array
-    results = reader.readtext(image_path_or_array, width_ths=0.7)
-    
-    # Format: [([[x1,y1], [x2,y2], [x3,y3], [x4,y4]], text, confidence), ...]
-    return results
+
+    results = reader.readtext(
+        image_path_or_array,
+        width_ths=0.7,       # merge boxes on same line
+        paragraph=False      # keep individual word boxes for layout clustering
+    )
+
+    # Filter low-confidence results — removes scan artifacts and noise
+    filtered = [
+        (bbox, text.strip(), conf)
+        for bbox, text, conf in results
+        if conf >= confidence_threshold and text.strip()
+    ]
+
+    print(f"[OCR] {len(results)} raw results → {len(filtered)} kept (conf ≥ {confidence_threshold})")
+    return filtered

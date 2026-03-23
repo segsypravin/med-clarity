@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Upload, FileSearch, CheckCircle2, AlertCircle, Loader2 } from 'lucide-react';
 
 export default function ScanUpload() {
@@ -26,7 +26,7 @@ export default function ScanUpload() {
         formData.append("scan", file);
 
         try {
-            const response = await fetch("http://127.0.0.1:3001/scan", {
+            const response = await fetch("http://localhost:5000/api/scan", {
                 method: "POST",
                 body: formData,
             });

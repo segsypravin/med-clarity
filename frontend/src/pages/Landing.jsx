@@ -1,49 +1,11 @@
 import { useNavigate } from 'react-router-dom';
 import { useLanguage } from '../context/LanguageContext';
 
-const features = [
-    {
-        icon: '🧬',
-        title: 'AI-Powered Analysis',
-        desc: 'Our advanced AI reads your medical reports and breaks down complex terminology into plain language you actually understand.',
-    },
-    {
-        icon: '🔒',
-        title: 'Bank-Grade Security',
-        desc: 'Your health data is encrypted with AES-256 and stored with zero third-party access. Your privacy is non-negotiable.',
-    },
-    {
-        icon: '👨‍⚕️',
-        title: 'Doctor Connect',
-        desc: 'Instantly connect with certified specialists who can review your simplified reports and answer your questions.',
-    },
-    {
-        icon: '📊',
-        title: 'Health Trends',
-        desc: 'Track your health metrics over time with beautiful charts that make spotting patterns effortless.',
-    },
-    {
-        icon: '⚡',
-        title: 'Instant Results',
-        desc: 'Upload your report and get a simplified, easy-to-read summary in under 30 seconds.',
-    },
-    {
-        icon: '🌐',
-        title: 'Multi-Format Support',
-        desc: 'Upload PDFs, images, or scanned documents. We handle blood work, MRIs, X-rays, and more.',
-    },
-];
 
-const steps = [
-    { num: '01', title: 'Upload Your Report', desc: 'Drag & drop your medical document — PDF, image, or scan.' },
-    { num: '02', title: 'AI Processes It', desc: 'Our engine extracts and interprets every medical term and value.' },
-    { num: '03', title: 'Read Plain English', desc: 'Get a clear, jargon-free summary with actionable insights.' },
-    { num: '04', title: 'Track Your Health', desc: 'Save reports, view trends, and share with your doctor.' },
-];
 
-const testimonials = [];
 
-const stats = [];
+
+
 
 export default function Landing() {
     const { t } = useLanguage();

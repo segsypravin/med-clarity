@@ -1,20 +1,20 @@
-import { useState, useEffect } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useLanguage } from '../context/LanguageContext';
 
 export default function Login() {
     const { t } = useLanguage();
     const navigate = useNavigate();
-    const location = useLocation();
-    const [mode, setMode] = useState('signin'); // 'signin' | 'signup'
+
+    const [mode, setMode] = useState(() => {
+        const params = new URLSearchParams(window.location.search);
+        return params.get('mode') === 'signup' ? 'signup' : 'signin';
+    }); // 'signin' | 'signup'
     const [showPass, setShowPass] = useState(false);
     const [loading, setLoading] = useState(false);
     const [form, setForm] = useState({ name: '', email: '', password: '' });
 
-    useEffect(() => {
-        const params = new URLSearchParams(location.search);
-        if (params.get('mode') === 'signup') setMode('signup');
-    }, [location.search]);
+
 
     const handleChange = e => setForm({ ...form, [e.target.name]: e.target.value });
 

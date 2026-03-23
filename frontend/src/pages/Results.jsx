@@ -182,6 +182,10 @@ export default function Results() {
 
                                     return arr.map((test, idx) => {
                                         const statusLow = test.status?.toLowerCase();
+                                        const isAbnormal = statusLow === 'high' || statusLow === 'low';
+                                        const remark     = txt(test.remark,      test.remark_translated);
+                                        const reason     = txt(test.reason,      test.reason_translated);
+                                        const suggestion = txt(test.suggestion,  test.suggestion_translated);
                                         return (
                                             <tr key={idx} style={{
                                                 borderBottom: '1px solid #e5e7eb',
@@ -201,12 +205,26 @@ export default function Results() {
                                                         {test.status || '-'}
                                                     </Badge>
                                                 </td>
-                                                <td style={{
-                                                    padding: '12px 8px',
-                                                    color: statusLow === 'normal' ? '#6b7280' : '#dc2626',
-                                                    fontSize: '0.9rem', lineHeight: '1.5'
-                                                }}>
-                                                    {txt(test.remark, test.remark_translated) || '-'}
+                                                <td style={{ padding: '12px 8px', fontSize: '0.88rem', lineHeight: '1.6', maxWidth: '320px' }}>
+                                                    {/* Remark: concise 1-sentence summary */}
+                                                    {remark && (
+                                                        <p style={{ margin: '0 0 4px', color: isAbnormal ? '#dc2626' : '#374151', fontWeight: 500 }}>
+                                                            {remark}
+                                                        </p>
+                                                    )}
+                                                    {/* Reason: medical explanation (shown for abnormal) */}
+                                                    {reason && reason !== remark && (
+                                                        <p style={{ margin: '0 0 4px', color: '#6b7280', fontSize: '0.82rem' }}>
+                                                            <strong>Why:</strong> {reason}
+                                                        </p>
+                                                    )}
+                                                    {/* Suggestion: actionable advice */}
+                                                    {suggestion && suggestion !== remark && (
+                                                        <p style={{ margin: 0, color: '#0369a1', fontSize: '0.82rem' }}>
+                                                            <strong>Advice:</strong> {suggestion}
+                                                        </p>
+                                                    )}
+                                                    {!remark && !reason && '-'}
                                                 </td>
                                             </tr>
                                         );

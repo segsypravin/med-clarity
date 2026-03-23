@@ -3,8 +3,10 @@ import json
 import re
 from deep_translator import GoogleTranslator
 
+
+# ── Translation helper ───────────────────────────────────────────────────────
 def translate_text(text, target_lang):
-    """Translates text using Google Translator. Returns original if fails."""
+    """Translates text to target_lang using Google Translator. Returns original on failure."""
     try:
         if not text or target_lang == "en":
             return text
@@ -13,17 +15,18 @@ def translate_text(text, target_lang):
         print(f"[Translation] Error ({target_lang}): {e}")
         return text
 
+
+# ── Full spoken summary builder ───────────────────────────────────────────────
 def generate_full_summary(summary, tests, lang="en"):
     """Builds a comprehensive spoken summary for TTS, fully localized."""
-    # Clean symbols that break speech synthesis
     clean = (summary or "").replace("µ", "micro").replace("^", " ").strip()
     full = clean + " "
 
     troubles = [t for t in (tests or []) if t.get("status", "").lower() in ["high", "low", "critical"]]
 
     STATUS_MAP = {
-        "hi": {"high": "ज़्यादा", "low": "कम", "normal": "सामान्य", "critical": "गंभीर"},
-        "mr": {"high": "जास्त", "low": "कमी", "normal": "सामान्य", "critical": "गंभीर"},
+        "hi": {"high": "ज़्यादा", "low": "कम", "normal": "सामान्य"},
+        "mr": {"high": "जास्त", "low": "कमी", "normal": "सामान्य"},
     }
 
     if troubles:
@@ -57,48 +60,62 @@ def generate_full_summary(summary, tests, lang="en"):
     return full.strip()
 
 
-def analyze_report(text, lang="en"):
-    """Sends OCR text to Ollama and returns structured JSON with optional translations."""
+# ── Core AI analysis ────────────────────────────────────────────────────────
+def analyze_report(structured_tests_or_text, lang="en"):
+    """
+    Accepts either:
+      - list of structured test dicts (preferred, from extraction pipeline)
+      - raw OCR text string (fallback for backward compatibility)
+    Returns full analysis with reason + suggestion per test.
+    """
 
-    prompt = f"""You are a senior clinical pathologist. Analyze the medical report below.
+    # ── Build input for prompt ───────────────────────────────────────────────
+    if isinstance(structured_tests_or_text, list) and len(structured_tests_or_text) > 0:
+        # Format structured tests as a clear table for the LLM
+        test_lines = []
+        for t in structured_tests_or_text:
+            line = f"  - {t['test']}: {t['value']} {t.get('unit', '')}"
+            if t.get("normal_range"):
+                line += f"  (Reference: {t['normal_range']})"
+            # Include the mathematically verified status
+            calculated_status = t.get('status', 'Normal').upper()
+            line += f"  => [STATUS: {calculated_status}]"
+            test_lines.append(line)
+        report_input = "EXTRACTED TEST DATA (verified):\n" + "\n".join(test_lines)
+        use_structured = True
+    else:
+        # Fallback: raw text
+        report_input = f"RAW REPORT TEXT:\n{structured_tests_or_text}"
+        use_structured = False
 
-REPORT:
-{text}
+    prompt = f"""You are a senior clinical pathologist AI assistant.
 
-STRICT REFERENCE RANGES:
-- Haemoglobin: 13.0-17.0 g/dL (Male), 12.0-15.0 g/dL (Female)
-- WBC Count: 4.0-11.0 × 10³/µL
-- RBC Count: 4.5-5.5 × 10⁶/µL
-- Platelet Count: 150-450 × 10³/µL
-- Hematocrit (Hct): 37.0-47.0 %
-- MCV: 80.0-100.0 fL
-- MCH: 27.0-32.0 pg
-- Neutrophils: 2.0-7.5 × 10³/µL
-- Lymphocytes: 1.0-4.0 × 10³/µL
-- Monocytes: 0.2-1.0 × 10³/µL
-- Eosinophils: 0.0-0.5 × 10³/µL
-- Basophils: 0.0-0.2 × 10³/µL
-- FBS: 70-100 mg/dL
-- HbA1c: <5.7% Normal
-- Total Cholesterol: <200 mg/dL
-- LDL: <100 mg/dL
-- TSH: 0.4-4.0 mIU/L
+{report_input}
 
-RULES:
-1. Compare each value against the reference ranges above.
-2. If WITHIN range → status = "Normal". Write a brief reassuring remark about what this value means for the patient's health (e.g. "Your haemoglobin is healthy, indicating good oxygen-carrying capacity.").
-3. If OUTSIDE range → status = "Low" or "High". Explain WHY in simple terms and give 1-2 practical suggestions (diet, hydration, lifestyle). If critically abnormal, add "Consult a doctor immediately."
-4. Always list EVERY test parameter extracted from the report.
-5. health_score: overall score 0-100 (100 = perfectly healthy).
-6. Summary: 2-3 personalized sentences summarising overall health.
+CRITICAL RULES:
+1. Do NOT calculate or guess the status. You MUST use the exact [STATUS] provided for each test above.
+2. If the Status is 'NORMAL', your reason MUST be exactly "Value is within normal limits." and your suggestion MUST be exactly "Maintain a healthy lifestyle." DO NOT invent diseases, conditions, or treatments for NORMAL tests.
+3. If the Status is 'HIGH' or 'LOW', provide a clear medical reason (physiological meaning, possible causes) and practical, actionable advice.
+4. remark: A concise 1-sentence version combining reason + suggestion.
+5. health_score: integer 0–100 (100 = perfectly healthy, deduct ~5 per abnormal test).
+6. overall_status: "Normal" if all tests normal, otherwise "Attention Required".
+7. summary: 2–3 personalized sentences about overall health based on the results.
 
-RESPOND WITH VALID JSON ONLY — NO EXTRA TEXT:
+RESPOND WITH VALID JSON ONLY — NO EXTRA TEXT, NO MARKDOWN:
 {{
   "summary": "string",
   "health_score": integer,
   "overall_status": "Normal or Attention Required",
   "tests": [
-    {{"test": "Name", "value": "val", "unit": "unit", "status": "Normal/Low/High", "remark": "Meaningful explanation and advice"}}
+    {{
+      "test": "Test Name",
+      "value": "value as string",
+      "unit": "unit",
+      "status": "Normal/Low/High",
+      "reason": "Medical explanation why it is normal/abnormal.",
+      "suggestion": "Actionable advice for the patient.",
+      "remark": "One-sentence summary of reason + suggestion."
+    }}
   ]
 }}"""
 
@@ -106,41 +123,47 @@ RESPOND WITH VALID JSON ONLY — NO EXTRA TEXT:
         response = requests.post(
             "http://127.0.0.1:11434/api/generate",
             json={"model": "llama3", "prompt": prompt, "stream": False, "format": "json"},
-            timeout=120
+            timeout=180
         )
         raw = response.json().get("response", "")
 
-        # Try to load directly as JSON
+        # Parse JSON
         try:
             parsed = json.loads(raw)
         except Exception:
-            # Fallback: extract JSON block from text
             m = re.search(r"\{.*\}", raw, re.DOTALL)
             if not m:
-                return {"summary": "AI could not parse the report.", "tests": [], "health_score": 0, "overall_status": "Unknown", "lang": lang}
+                return _error_result(lang, "AI could not parse the report.")
             try:
                 parsed = json.loads(m.group(0))
             except Exception as e:
-                print(f"[AI] JSON parse failed: {e}")
-                return {"summary": "AI could not parse the report.", "tests": [], "health_score": 0, "overall_status": "Unknown", "lang": lang}
+                print(f"[AI] JSON parse failed: {e}\nRAW: {raw[:500]}")
+                return _error_result(lang, "AI returned malformed JSON.")
 
         summary = parsed.get("summary", "Analysis complete.")
         tests = parsed.get("tests", [])
         if not isinstance(tests, list):
             tests = []
 
-        # Normalize each test
+        # ── Normalize each test entry ────────────────────────────────────────
         for item in tests:
-            item["test"] = str(item.get("test", item.get("name", "Unknown"))).strip()
-            item["value"] = str(item.get("value", "")).strip()
-            item["unit"] = str(item.get("unit", "")).strip()
-            item["status"] = str(item.get("status", "Normal")).strip().capitalize()
-            item["remark"] = str(item.get("remark", "Within normal range.")).strip()
+            item["test"]       = str(item.get("test", item.get("name", "Unknown"))).strip()
+            item["value"]      = str(item.get("value", "")).strip()
+            item["unit"]       = str(item.get("unit", "")).strip()
+            item["status"]     = str(item.get("status", "Normal")).strip().capitalize()
+            item["reason"]     = str(item.get("reason", "")).strip()
+            item["suggestion"] = str(item.get("suggestion", "")).strip()
+            # remark = combined for frontend display (backward-compatible)
+            item["remark"]     = str(item.get("remark", item.get("reason", ""))).strip()
 
+            # Optional translation
             if lang != "en":
-                item["test_translated"] = translate_text(item["test"], lang)
-                item["remark_translated"] = translate_text(item["remark"], lang)
+                item["test_translated"]       = translate_text(item["test"], lang)
+                item["remark_translated"]     = translate_text(item["remark"], lang)
+                item["reason_translated"]     = translate_text(item["reason"], lang)
+                item["suggestion_translated"] = translate_text(item["suggestion"], lang)
 
+        # ── Build translated summary ─────────────────────────────────────────
         summary_translated = None
         if lang != "en":
             summary_translated = translate_text(summary, lang)
@@ -152,29 +175,38 @@ RESPOND WITH VALID JSON ONLY — NO EXTRA TEXT:
             "summary": summary,
             "summary_translated": summary_translated,
             "full_report_summary": full_summary,
-            "health_score": parsed.get("health_score", 80),
+            "health_score": int(parsed.get("health_score", 80)),
             "overall_status": parsed.get("overall_status", "Normal"),
             "tests": tests,
             "lang": lang
         }
 
     except Exception as e:
-        return {
-            "summary": f"Connection Error: {str(e)}",
-            "tests": [],
-            "health_score": 0,
-            "overall_status": "Error",
-            "lang": lang
-        }
+        return _error_result(lang, f"Connection Error: {e}")
 
 
+def _error_result(lang, msg):
+    return {
+        "summary": msg,
+        "summary_translated": None,
+        "full_report_summary": msg,
+        "health_score": 0,
+        "overall_status": "Error",
+        "tests": [],
+        "lang": lang
+    }
+
+
+# ── On-the-fly translation of an existing result ────────────────────────────
 def translate_result(data, target_lang):
     """Re-translates an existing analysis result to a new language."""
     if not data:
         return {}
     if target_lang == "en":
         if not data.get("full_report_summary"):
-            data["full_report_summary"] = generate_full_summary(data.get("summary", ""), data.get("tests", []))
+            data["full_report_summary"] = generate_full_summary(
+                data.get("summary", ""), data.get("tests", [])
+            )
         return data
 
     new_data = data.copy()
@@ -183,11 +215,15 @@ def translate_result(data, target_lang):
     new_tests = []
     for item in (data.get("tests") or []):
         ni = item.copy()
-        ni["test_translated"] = translate_text(item.get("test", ""), target_lang)
-        ni["remark_translated"] = translate_text(item.get("remark", ""), target_lang)
+        ni["test_translated"]       = translate_text(item.get("test", ""), target_lang)
+        ni["remark_translated"]     = translate_text(item.get("remark", ""), target_lang)
+        ni["reason_translated"]     = translate_text(item.get("reason", ""), target_lang)
+        ni["suggestion_translated"] = translate_text(item.get("suggestion", ""), target_lang)
         new_tests.append(ni)
 
     new_data["tests"] = new_tests
-    new_data["full_report_summary"] = generate_full_summary(new_data["summary_translated"], new_tests, target_lang)
+    new_data["full_report_summary"] = generate_full_summary(
+        new_data["summary_translated"], new_tests, target_lang
+    )
     new_data["lang"] = target_lang
     return new_data

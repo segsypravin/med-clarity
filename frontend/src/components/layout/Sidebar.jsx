@@ -1,4 +1,4 @@
-import { NavLink, useLocation } from 'react-router-dom';
+import { NavLink, useNavigate } from 'react-router-dom';
 import {
     LayoutDashboard, Upload, ClipboardList, History,
     Stethoscope, Settings, Info, Activity, LogOut, Globe
@@ -7,6 +7,15 @@ import { useLanguage } from '../../context/LanguageContext';
 
 export default function Sidebar() {
     const { language, setLanguage, t } = useLanguage();
+    const navigate = useNavigate();
+
+    const handleLogout = () => {
+        // Clear auth data if any
+        localStorage.removeItem('user');
+        localStorage.removeItem('token');
+        // Redirect to landing
+        navigate('/landing');
+    };
 
     const navItems = [
         {
@@ -101,7 +110,11 @@ export default function Sidebar() {
 
             {/* Bottom */}
             <div className="sidebar-bottom">
-                <button className="btn btn-ghost" style={{ width: '100%', justifyContent: 'flex-start', gap: '0.75rem' }}>
+                <button 
+                    className="btn btn-ghost" 
+                    style={{ width: '100%', justifyContent: 'flex-start', gap: '0.75rem' }}
+                    onClick={handleLogout}
+                >
                     <LogOut size={16} />
                     <span style={{ fontSize: '0.875rem' }}>{t('common.sign_out')}</span>
                 </button>

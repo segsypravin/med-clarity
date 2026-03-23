@@ -25,6 +25,7 @@ app.use('/api/history', require('./routes/history'));
 app.use('/api/doctors', require('./routes/doctors'));
 app.use('/api/get-doctors', require('./doctor-service/doctorRoutes'));
 app.use('/api/settings', require('./routes/settings'));
+app.use('/api/scan', require('./routes/scan'));
 
 // ── Root ──────────────────────────────────────────────────────────────────────
 app.get('/', (_req, res) => {
