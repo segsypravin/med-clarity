@@ -12,12 +12,6 @@ def clean_text(text: str) -> str:
     # Allow: letters, digits, %, /, -, ., (, ), >, <, =, :, ^, µ, ×, @, ' (for OCR typos)
     text = re.sub(r'[^a-zA-Z0-9%\/\-\.\(\)\>\<\=\:\,\^\µ\×\@\' ]', '', text)
     return text.strip()
-    # Fix dropped decimal point with leading zero (e.g., " 04 " -> " 0.4 ")
-    text = re.sub(r'\b0(\d)\b', r'0.\1', text)
-    text = re.sub(r'\s+', ' ', text)
-    # Allow: letters, digits, %, /, -, ., (, ), >, <, =, :, ^, µ, ×, @, ' (for OCR typos)
-    text = re.sub(r'[^a-zA-Z0-9%\/\-\.\(\)\>\<\=\:\,\^\µ\×\@\' ]', '', text)
-    return text.strip()
 
 
 def normalize_test_name(raw_name: str) -> tuple:
