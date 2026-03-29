@@ -1432,6 +1432,19 @@ textarea:focus {
   align-self: flex-start;
 }
 
+.login-back-logo .landing-logo-text {
+  color: #ffffff;
+  text-shadow: 0 2px 10px rgba(0,0,0,0.3);
+}
+
+.login-back-logo .landing-logo-text span {
+  background: linear-gradient(135deg, #ff8a98, #ff334d);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  text-shadow: none;
+}
+
 .login-left-content {
   flex: 1;
   display: flex;

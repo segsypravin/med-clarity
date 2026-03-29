@@ -28,7 +28,7 @@ export default function Results() {
         const translate = async () => {
             setIsTranslating(true);
             try {
-                const res = await fetch('http://localhost:5000/api/analyze/translate', {
+                const res = await fetch('http://localhost:5000/translate_result', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ data: result, lang: displayLang })
@@ -215,13 +215,13 @@ export default function Results() {
                                                     {/* Reason: medical explanation (shown for abnormal) */}
                                                     {reason && reason !== remark && (
                                                         <p style={{ margin: '0 0 4px', color: '#6b7280', fontSize: '0.82rem' }}>
-                                                            <strong>Why:</strong> {reason}
+                                                            <strong>{displayLang === 'hi' ? 'क्यों:' : displayLang === 'mr' ? 'का:' : 'Why:'}</strong> {reason}
                                                         </p>
                                                     )}
                                                     {/* Suggestion: actionable advice */}
                                                     {suggestion && suggestion !== remark && (
                                                         <p style={{ margin: 0, color: '#0369a1', fontSize: '0.82rem' }}>
-                                                            <strong>Advice:</strong> {suggestion}
+                                                            <strong>{displayLang === 'hi' ? 'सलाह:' : displayLang === 'mr' ? 'सल्ला:' : 'Advice:'}</strong> {suggestion}
                                                         </p>
                                                     )}
                                                     {!remark && !reason && '-'}

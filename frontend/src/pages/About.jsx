@@ -3,12 +3,12 @@ import { Link } from 'react-router-dom';
 import { useLanguage } from '../context/LanguageContext';
 
 const features = [
-    { phase: 'Phase 1', status: 'done', list: ['Medical report upload (PDF/image/CT/X-ray)', 'File validation & secure storage', 'Basic health report display', 'Multi-page web interface', 'Red & white accessible UI'] },
-    { phase: 'Phase 2', status: 'upcoming', list: ['OCR-based text extraction (Tesseract)', 'AI-powered health analysis (Gemini API)', 'Health score calculation (0–100)', 'Simple language summary generation', 'Multilingual output (English & Hindi)', 'Text-to-speech audio output', 'Personalized suggestions & precautions'] },
-    { phase: 'Phase 3', status: 'upcoming', list: ['Live nearby doctor recommendations', 'Specialist matching by condition', 'Location-based doctor availability', 'Doctor appointment booking', 'Health report history & comparison', 'MRI & ultrasound scan support', 'More regional languages', 'Cloud scaling & mobile app (Android/iOS)'] },
+    { phase: 'Phase 1: Core Platform', status: 'done', list: ['Medical report upload (PDF/image/CT/X-ray)', 'File validation & secure storage', 'Basic health report display', 'Multi-page web interface', 'Red & white accessible UI'] },
+    { phase: 'Phase 2: AI Intelligence & i18n', status: 'done', list: ['OCR-based text extraction (EasyOCR)', 'AI-powered health analysis (Local LLaMA)', 'Health score calculation (0–100)', 'Simple language summary generation', 'Multilingual output (English, Hindi, Marathi)', 'Personalized suggestions & precautions'] },
+    { phase: 'Phase 3: Healthcare Connectivity', status: 'in-progress', list: ['Specialist matching by condition', 'Live nearby doctor recommendations', 'Location-based doctor availability', 'Doctor appointment booking', 'Health report history & comparison', 'Cloud scaling & mobile app'] },
 ];
 
-const statusColor = { done: '#059669', upcoming: '#d97706' };
+const statusColor = { done: '#059669', upcoming: '#d97706', 'in-progress': '#2563eb' };
 
 export default function About() {
     const { t } = useLanguage();
@@ -82,7 +82,8 @@ export default function About() {
                             <div className="flex-between mb-2">
                                 <h3 style={{ fontWeight: '700', fontSize: '1rem' }}>{phase}</h3>
                                 <span style={{ fontSize: '0.78rem', fontWeight: '600', color: statusColor[status] }}>
-                                    {status === 'done' ? '✓ ' : '⏳ '}{status === 'done' ? t('common.success') : 'Upcoming'}
+                                    {status === 'done' ? '✓ ' : status === 'in-progress' ? '▶ ' : '⏳ '}
+                                    {status === 'done' ? t('common.success') : status === 'in-progress' ? 'In Progress' : 'Upcoming'}
                                 </span>
                             </div>
                             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '0.35rem' }}>
@@ -90,6 +91,8 @@ export default function About() {
                                     <div key={item} style={{ display: 'flex', gap: '0.5rem', fontSize: '0.85rem', color: 'var(--text-muted)', alignItems: 'flex-start' }}>
                                         {status === 'done'
                                             ? <CheckCircle size={13} color="var(--success)" style={{ flexShrink: 0, marginTop: 2 }} />
+                                            : status === 'in-progress'
+                                            ? <Activity size={13} color="var(--info)" style={{ flexShrink: 0, marginTop: 2 }} />
                                             : <Clock size={13} color="var(--warning)" style={{ flexShrink: 0, marginTop: 2 }} />}
                                         {item}
                                     </div>
@@ -106,14 +109,14 @@ export default function About() {
                         {[
                             ['Frontend', 'React + Vite'],
                             ['Routing', 'React Router'],
+                            ['Gateway', 'Node.js + Express'],
+                            ['AI Backend', 'Python + FastAPI'],
+                            ['Medical OCR', 'EasyOCR + OpenCV'],
+                            ['AI Intelligence', 'Ollama (LLaMA 3)'],
+                            ['TTS Engine', 'Web Speech API'],
                             ['Styling', 'Vanilla CSS'],
-                            ['Backend', 'Node.js + Express'],
-                            ['File Handling', 'Multer'],
-                            ['OCR (Phase 2)', 'Tesseract.js'],
-                            ['AI (Phase 2)', 'Google Gemini API'],
-                            ['TTS (Phase 2)', 'Web Speech API'],
-                            ['Auth (Phase 3)', 'JWT / OAuth'],
-                            ['Mobile', 'React Native / PWA'],
+                            ['Auth (Upcoming)', 'JWT / OAuth'],
+                            ['Mobile (Upcoming)', 'React Native / PWA'],
                         ].map(([layer, tech]) => (
                             <div key={layer} style={{ padding: '0.75rem', background: 'var(--bg)', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border)' }}>
                                 <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.25rem' }}>{layer}</div>

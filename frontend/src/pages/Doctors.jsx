@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { useLocation } from 'react-router-dom';
 import { MapPin, Star, Phone, Clock, Loader, AlertCircle } from 'lucide-react';
 import { Badge } from '../components/ui/index.jsx';
 import { useLanguage } from '../context/LanguageContext';
@@ -7,14 +8,20 @@ const API_BASE = 'http://localhost:5000';
 
 export default function Doctors() {
     const { t } = useLanguage();
-    const [filter, setFilter] = useState('All');
+    const location = useLocation();
+    
+    // Read initial filter from URL query param
+    const queryParams = new URLSearchParams(location.search);
+    const initialFilter = queryParams.get('filter') || 'All';
+    
+    const [filter, setFilter] = useState(initialFilter);
     const [search, setSearch] = useState('');
     const [doctors, setDoctors] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [userCoords, setUserCoords] = useState(null);
 
-    const SPECIALISTS = ['All', 'Cardiologist', 'Endocrinologist', 'Pulmonologist', 'Gastroenterologist', 'General Physician'];
+    const SPECIALISTS = ['All', 'Cardiologist', 'Endocrinologist', 'Pulmonologist', 'Gastroenterologist', 'Oncologist', 'General Physician'];
 
     function haversineDistance(lat1, lon1, lat2, lon2) {
         const toRad = (deg) => (deg * Math.PI) / 180;
