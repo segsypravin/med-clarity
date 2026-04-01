@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Upload, FileSearch, CheckCircle2, AlertCircle, Loader2, Activity, Stethoscope, Image as ImageIcon } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
+import { auth } from '../firebase';
 
 export default function ScanUpload() {
     const navigate = useNavigate();
@@ -42,9 +43,11 @@ export default function ScanUpload() {
         formData.append("scan", file);
 
         try {
+            const token = auth.currentUser ? await auth.currentUser.getIdToken() : '';
             const response = await fetch("http://localhost:5000/api/scan", {
                 method: "POST",
                 body: formData,
+                headers: { ...(token && { Authorization: `Bearer ${token}` }) }
             });
 
             if (!response.ok) {
@@ -53,6 +56,43 @@ export default function ScanUpload() {
 
             const data = await response.json();
             setResult(data);
+            
+            // Save the X-Ray scan to the user's history
+            try {
+                const score = data.confidence ? Math.round(data.confidence * 100) : 0;
+                const statusStr = data.prediction?.toLowerCase() === 'normal' ? 'normal' : 'high_risk';
+                
+                // Format the payload so it renders correctly if user clicks "View" from history
+                const resultPayload = {
+                    summary: `X-Ray Analysis indicates a prediction of ${data.prediction} with ${(data.confidence * 100).toFixed(1)}% confidence.`,
+                    overall_status: statusStr === 'normal' ? 'Normal' : 'High Risk',
+                    health_score: score,
+                    tests: [{
+                        test: 'AI Image Prediction',
+                        value: data.prediction,
+                        unit: 'N/A',
+                        status: statusStr === 'normal' ? 'Normal' : 'High Risk',
+                        remark: `Confidence level: ${(data.confidence * 100).toFixed(1)}%`
+                    }]
+                };
+
+                await fetch('http://localhost:5000/api/history', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', ...(token && { Authorization: `Bearer ${token}` }) },
+                    body: JSON.stringify({
+                        name: file.name,
+                        filename: file.name,
+                        date: new Date().toLocaleDateString(),
+                        type: 'X-Ray',
+                        status: statusStr,
+                        score: score,
+                        size: (file.size / 1024).toFixed(1) + ' KB',
+                        result: resultPayload
+                    })
+                });
+            } catch (historyErr) {
+                console.error("Failed to save scan to history:", historyErr);
+            }
         } catch (err) {
             setError(err.message || t("scan.error_unexpected"));
         } finally {

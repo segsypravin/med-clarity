@@ -1,5 +1,8 @@
-import { Globe, Volume2, Accessibility, Bell, Shield, Smartphone } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Globe, Volume2, Accessibility, Bell, Shield, Smartphone, User, Key } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
+import { auth } from '../firebase';
+import { updateProfile, sendPasswordResetEmail } from 'firebase/auth';
 
 const SECTION = ({ title, icon: Icon, children }) => (
     <div className="card card-p mb-3">
@@ -30,6 +33,44 @@ function ToggleRow({ label, description, checked, onChange }) {
 
 export default function Settings() {
     const { language, setLanguage, audioSettings, updateAudioSettings, t } = useLanguage();
+    
+    // Auth State
+    const [user, setUser] = useState(null);
+    const [displayName, setDisplayName] = useState('');
+    const [updatingProfile, setUpdatingProfile] = useState(false);
+
+    useEffect(() => {
+        const unsubscribe = auth.onAuthStateChanged(u => {
+            setUser(u);
+            if (u) setDisplayName(u.displayName || '');
+        });
+        return () => unsubscribe();
+    }, []);
+
+    const handleUpdateName = async () => {
+        if (!user || !displayName.trim()) return;
+        setUpdatingProfile(true);
+        try {
+            await updateProfile(user, { displayName });
+            alert(t('settings.profile_updated', { defaultValue: 'Profile updated successfully!' }));
+        } catch (error) {
+            console.error(error);
+            alert(t('settings.profile_update_error', { defaultValue: 'Failed to update profile.' }));
+        } finally {
+            setUpdatingProfile(false);
+        }
+    };
+
+    const handleResetPassword = async () => {
+        if (!user || !user.email) return;
+        try {
+            await sendPasswordResetEmail(auth, user.email);
+            alert(t('settings.password_email_sent', { defaultValue: 'Password reset email sent! Check your inbox.' }));
+        } catch (error) {
+            console.error(error);
+            alert(error.message);
+        }
+    };
 
     return (
         <>
@@ -44,6 +85,42 @@ export default function Settings() {
             </div>
 
             <div className="page-body animate-fade-up" style={{ maxWidth: 720 }}>
+                {/* Profile / Account */}
+                {user && (
+                    <SECTION title={t('settings.profile', { defaultValue: 'My Profile' })} icon={User}>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+                            <div className="form-group" style={{ marginBottom: 0 }}>
+                                <label>{t('settings.display_name', { defaultValue: 'Display Name' })}</label>
+                                <div style={{ display: 'flex', gap: '0.75rem' }}>
+                                    <input 
+                                        type="text" 
+                                        value={displayName} 
+                                        onChange={e => setDisplayName(e.target.value)} 
+                                        placeholder="Your Name"
+                                        style={{ flex: 1 }}
+                                    />
+                                    <button className="btn btn-primary" onClick={handleUpdateName} disabled={updatingProfile || displayName === user.displayName}>
+                                        {updatingProfile ? '...' : t('common.save', { defaultValue: 'Save' })}
+                                    </button>
+                                </div>
+                            </div>
+                            <div className="form-group" style={{ marginBottom: 0 }}>
+                                <label>{t('login.email', { defaultValue: 'Email Address' })}</label>
+                                <input type="email" value={user.email || ''} disabled style={{ background: 'var(--bg)', color: 'var(--text-muted)', cursor: 'not-allowed' }} />
+                                <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginTop: '0.4rem' }}>
+                                    Email cannot be changed directly for security reasons.
+                                </p>
+                            </div>
+                            <div style={{ marginTop: '0.5rem', paddingTop: '1rem', borderTop: '1px solid var(--border)' }}>
+                                <button className="btn btn-outline" onClick={handleResetPassword}>
+                                    <Key size={16} className="mr-2" style={{ display: 'inline-block', verticalAlign: 'middle', marginRight: '6px' }} /> 
+                                    {t('settings.change_password', { defaultValue: 'Send Password Reset Email' })}
+                                </button>
+                            </div>
+                        </div>
+                    </SECTION>
+                )}
+
                 {/* Language */}
                 <SECTION title={t('settings.language')} icon={Globe}>
                     <div className="form-group">

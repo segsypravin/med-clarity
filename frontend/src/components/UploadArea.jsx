@@ -3,6 +3,7 @@ import { Upload, FileText, Image, CheckCircle, AlertCircle, X } from 'lucide-rea
 import { Spinner } from './ui/index.jsx';
 import { useNavigate } from 'react-router-dom';
 import { useLanguage } from '../context/LanguageContext';
+import { auth } from '../firebase';
 
 const ACCEPTED_TYPES = {
     'application/pdf': { label: 'PDF Report', icon: FileText },
@@ -42,7 +43,12 @@ export default function UploadArea({ onSuccess }) {
         const formData = new FormData();
         formData.append('report', file);
         try {
-            const res = await fetch('http://localhost:5000/api/upload', { method: 'POST', body: formData });
+            const token = auth.currentUser ? await auth.currentUser.getIdToken() : '';
+            const res = await fetch('http://localhost:5000/api/upload', { 
+                method: 'POST', 
+                body: formData,
+                headers: { ...(token && { Authorization: `Bearer ${token}` }) } 
+            });
             const data = await res.json();
             if (res.ok) {
                 // Post upload success, now trigger analyze
@@ -50,7 +56,7 @@ export default function UploadArea({ onSuccess }) {
 
                 const analyzeRes = await fetch('http://localhost:5000/api/analyze', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: { 'Content-Type': 'application/json', ...(token && { Authorization: `Bearer ${token}` }) },
                     body: JSON.stringify({ 
                         reportId: data.file.id, 
                         filename: data.file.filename,
@@ -65,7 +71,7 @@ export default function UploadArea({ onSuccess }) {
                     try {
                         await fetch('http://localhost:5000/api/history', {
                             method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
+                            headers: { 'Content-Type': 'application/json', ...(token && { Authorization: `Bearer ${token}` }) },
                             body: JSON.stringify({
                                 name: data.file.originalName,
                                 filename: data.file.filename,

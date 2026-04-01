@@ -3,7 +3,22 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
+const admin = require('firebase-admin');
 const errorHandler = require('./middleware/errorHandler');
+const requireAuth = require('./middleware/authMiddleware');
+
+// ── Firebase Admin Initialization ──────────────────────────────────────────────
+try {
+    // We are pointing to the JSON file you added to the backend folder
+    const serviceAccount = require('./firebase-service-account.json.json');
+    
+    admin.initializeApp({ 
+        credential: admin.credential.cert(serviceAccount) 
+    });
+    console.log('Firebase Admin initialized successfully.');
+} catch (err) {
+    console.warn('Firebase Admin init warning:', err.message);
+}
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -19,13 +34,16 @@ app.get('/api/health', (_req, res) => {
 });
 
 // ── Routes ────────────────────────────────────────────────────────────────────
-app.use('/api/upload', require('./routes/upload'));
-app.use('/api/analyze', require('./routes/analyze'));
-app.use('/api/history', require('./routes/history'));
+// Apply requireAuth to routes that should be protected
+app.use('/api/upload', requireAuth, require('./routes/upload'));
+app.use('/api/analyze', requireAuth, require('./routes/analyze'));
+app.use('/api/history', requireAuth, require('./routes/history'));
+app.use('/api/scan', requireAuth, require('./routes/scan'));
+
+// Public or semi-public routes
 app.use('/api/doctors', require('./routes/doctors'));
 app.use('/api/get-doctors', require('./doctor-service/doctorRoutes'));
-app.use('/api/settings', require('./routes/settings'));
-app.use('/api/scan', require('./routes/scan'));
+app.use('/api/settings', requireAuth, require('./routes/settings'));
 
 // ── Root ──────────────────────────────────────────────────────────────────────
 app.get('/', (_req, res) => {

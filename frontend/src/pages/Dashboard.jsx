@@ -1,18 +1,53 @@
+import { useState, useEffect } from 'react';
 import { FileText, Activity, TrendingUp, Users, ArrowRight, Clock } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { StatCard, Badge, HealthScore } from '../components/ui/index.jsx';
 import { useLanguage } from '../context/LanguageContext';
-
-const recentReports = [];
+import { auth } from '../firebase';
 
 export default function Dashboard() {
     const { t } = useLanguage();
+    const navigate = useNavigate();
+    const [recentReports, setRecentReports] = useState([]);
+    const [loading, setLoading] = useState(true);
 
     const statusMap = {
         success: { label: t('common.normal'), type: 'success' },
         warning: { label: t('common.moderate'), type: 'warning' },
         error: { label: t('common.high_risk'), type: 'error' },
+        normal: { label: t('common.normal'), type: 'success' },
+        high_risk: { label: t('common.high_risk'), type: 'error' },
     };
+
+    useEffect(() => {
+        const fetchDashboardData = async (user) => {
+            try {
+                if (!user) return;
+                const token = await user.getIdToken();
+                const res = await fetch('http://localhost:5000/api/history', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const data = await res.json();
+                if (data.success && data.records) {
+                    setRecentReports(data.records);
+                }
+            } catch (err) {
+                console.error("Failed to fetch dashboard data", err);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        const unsubscribe = auth.onAuthStateChanged(user => {
+            if (user) {
+                fetchDashboardData(user);
+            } else {
+                setLoading(false);
+            }
+        });
+        
+        return () => unsubscribe();
+    }, []);
 
     return (
         <>
@@ -29,10 +64,10 @@ export default function Dashboard() {
             <div className="page-body animate-fade-up">
                 {/* Stats */}
                 <div className="stat-grid">
-                    <StatCard icon={<FileText size={22} />} label={t('dashboard.total_reports')} value="0" sub={t('dashboard.all_time_uploads')} colorClass="red" />
-                    <StatCard icon={<Activity size={22} />} label={t('dashboard.latest_health_score')} value="-" sub={t('dashboard.no_reports_yet')} colorClass="green" />
-                    <StatCard icon={<TrendingUp size={22} />} label={t('dashboard.analyses_done')} value="0" sub={t('dashboard.ai_powered_insights')} colorClass="blue" />
-                    <StatCard icon={<Users size={22} />} label={t('dashboard.doctors_nearby')} value="0" sub={t('dashboard.based_on_location')} colorClass="amber" />
+                    <StatCard icon={<FileText size={22} />} label={t('dashboard.total_reports')} value={loading ? "-" : recentReports.length.toString()} sub={t('dashboard.all_time_uploads')} colorClass="red" />
+                    <StatCard icon={<Activity size={22} />} label={t('dashboard.latest_health_score')} value={loading ? "-" : recentReports.length > 0 ? recentReports[0].score : "-"} sub={t('dashboard.no_reports_yet')} colorClass="green" />
+                    <StatCard icon={<TrendingUp size={22} />} label={t('dashboard.analyses_done')} value={loading ? "-" : recentReports.length.toString()} sub={t('dashboard.ai_powered_insights')} colorClass="blue" />
+                    <StatCard icon={<Users size={22} />} label={t('dashboard.doctors_nearby')} value={loading ? "-" : "15"} sub={t('dashboard.based_on_location')} colorClass="amber" />
                 </div>
 
                 <div className="grid-2">
@@ -41,13 +76,15 @@ export default function Dashboard() {
                         <h2 className="section-title">{t('dashboard.latest_health_score')}</h2>
                         {recentReports.length > 0 ? (
                             <div style={{ display: 'flex', alignItems: 'center', gap: '2rem', marginTop: '1rem' }}>
-                                <HealthScore score={82} size={130} />
+                                <HealthScore score={recentReports[0].score || 0} size={130} />
                                 <div>
-                                    <Badge type="success" dot>{t('common.success')}</Badge>
+                                    <Badge type={statusMap[recentReports[0].status]?.type || 'neutral'} dot>
+                                        {statusMap[recentReports[0].status]?.label || recentReports[0].status}
+                                    </Badge>
                                     <p style={{ marginTop: '0.75rem', fontSize: '0.9rem', color: 'var(--text-muted)', lineHeight: '1.6' }}>
-                                        {t('common.mock_summary')}
+                                        {recentReports[0].result?.summary ? (recentReports[0].result.summary.length > 80 ? recentReports[0].result.summary.substring(0, 80) + '...' : recentReports[0].result.summary) : t('common.mock_summary')}
                                     </p>
-                                    <Link to="/results" className="btn btn-outline btn-sm" style={{ marginTop: '1rem', display: 'inline-flex' }}>
+                                    <Link to="/results" state={{ result: recentReports[0].result }} className="btn btn-outline btn-sm" style={{ marginTop: '1rem', display: 'inline-flex' }}>
                                         {t('dashboard.view_full_results')} <ArrowRight size={14} />
                                     </Link>
                                 </div>
@@ -110,17 +147,17 @@ export default function Dashboard() {
                                 </tr>
                             </thead>
                             <tbody>
-                                {recentReports.length > 0 ? recentReports.map((r) => (
-                                    <tr key={r.name}>
+                                {recentReports.length > 0 ? recentReports.slice(0, 5).map((r) => (
+                                    <tr key={r.id || r.name}>
                                         <td style={{ fontWeight: '500', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                                             <FileText size={15} color="var(--text-muted)" /> {r.name}
                                         </td>
                                         <td className="text-muted">{r.date}</td>
                                         <td><Badge type="neutral">{r.type}</Badge></td>
-                                        <td><Badge type={statusMap[r.status].type} dot>{statusMap[r.status].label}</Badge></td>
-                                        <td style={{ fontWeight: '700' }}>{r.score}<span className="text-muted" style={{ fontWeight: 400 }}>/100</span></td>
+                                        <td><Badge type={statusMap[r.status]?.type || 'neutral'} dot>{statusMap[r.status]?.label || r.status}</Badge></td>
+                                        <td style={{ fontWeight: '700' }}>{r.score || 0}<span className="text-muted" style={{ fontWeight: 400 }}>/100</span></td>
                                         <td>
-                                            <Link to="/results" className="btn btn-outline btn-sm">{t('table.action')}</Link>
+                                            <button onClick={() => navigate('/results', { state: { result: r.result } })} className="btn btn-outline btn-sm">{t('table.action')}</button>
                                         </td>
                                     </tr>
                                 )) : (

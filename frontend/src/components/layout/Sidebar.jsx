@@ -4,17 +4,22 @@ import {
     Stethoscope, Settings, Info, Activity, LogOut, Globe
 } from 'lucide-react';
 import { useLanguage } from '../../context/LanguageContext';
+import { auth } from '../../firebase';
+import { signOut } from 'firebase/auth';
 
 export default function Sidebar() {
     const { language, setLanguage, t } = useLanguage();
     const navigate = useNavigate();
 
-    const handleLogout = () => {
-        // Clear auth data if any
-        localStorage.removeItem('user');
-        localStorage.removeItem('token');
-        // Redirect to landing
-        navigate('/landing');
+    const handleLogout = async () => {
+        try {
+            await signOut(auth);
+            localStorage.removeItem('user');
+            localStorage.removeItem('token');
+            navigate('/landing');
+        } catch (error) {
+            console.error("Logout error", error);
+        }
     };
 
     const navItems = [

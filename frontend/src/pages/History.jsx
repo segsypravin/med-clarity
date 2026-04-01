@@ -3,6 +3,7 @@ import { FileText, Trash2, Eye, Loader2 } from 'lucide-react';
 import { Badge, EmptyState } from '../components/ui/index.jsx';
 import { Link, useNavigate } from 'react-router-dom';
 import { useLanguage } from '../context/LanguageContext';
+import { auth } from '../firebase';
 
 const statusMap = {
     normal: { label: 'Normal', type: 'success' },
@@ -27,7 +28,10 @@ export default function History() {
     const fetchHistory = async () => {
         try {
             setLoading(true);
-            const res = await fetch('http://localhost:5000/api/history');
+            const token = auth.currentUser ? await auth.currentUser.getIdToken() : '';
+            const res = await fetch('http://localhost:5000/api/history', {
+                headers: { ...(token && { Authorization: `Bearer ${token}` }) }
+            });
             const data = await res.json();
             if (data.success) {
                 setRecords(data.records || []);
@@ -41,7 +45,11 @@ export default function History() {
 
     const remove = async (id) => {
         try {
-            const res = await fetch(`http://localhost:5000/api/history/${id}`, { method: 'DELETE' });
+            const token = auth.currentUser ? await auth.currentUser.getIdToken() : '';
+            const res = await fetch(`http://localhost:5000/api/history/${id}`, { 
+                method: 'DELETE',
+                headers: { ...(token && { Authorization: `Bearer ${token}` }) }
+            });
             if (res.ok) {
                 setRecords(prev => prev.filter(r => r.id !== id));
             }

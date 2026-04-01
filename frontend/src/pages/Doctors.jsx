@@ -3,6 +3,7 @@ import { useLocation } from 'react-router-dom';
 import { MapPin, Star, Phone, Clock, Loader, AlertCircle } from 'lucide-react';
 import { Badge } from '../components/ui/index.jsx';
 import { useLanguage } from '../context/LanguageContext';
+import { auth } from '../firebase';
 
 const API_BASE = 'http://localhost:5000';
 
@@ -116,7 +117,10 @@ export default function Doctors() {
                 params.set('specialization', specialization);
             }
 
-            const res = await fetch(`${API_BASE}/api/get-doctors?${params}`);
+            const token = auth.currentUser ? await auth.currentUser.getIdToken() : '';
+            const res = await fetch(`${API_BASE}/api/get-doctors?${params}`, {
+                headers: { ...(token && { Authorization: `Bearer ${token}` }) }
+            });
             const data = await res.json();
 
             if (!res.ok || !data.success) {

@@ -4,6 +4,7 @@ import { HealthScore, Badge } from '../components/ui/index.jsx';
 import { Link, useLocation } from 'react-router-dom';
 import { useLanguage } from '../context/LanguageContext';
 import { useSpeech } from '../hooks/useSpeech';
+import { auth } from '../firebase';
 
 export default function Results() {
     const location = useLocation();
@@ -28,9 +29,10 @@ export default function Results() {
         const translate = async () => {
             setIsTranslating(true);
             try {
+                const token = auth.currentUser ? await auth.currentUser.getIdToken() : '';
                 const res = await fetch('http://localhost:5000/translate_result', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: { 'Content-Type': 'application/json', ...(token && { Authorization: `Bearer ${token}` }) },
                     body: JSON.stringify({ data: result, lang: displayLang })
                 });
                 if (!res.ok) throw new Error('Network error');
