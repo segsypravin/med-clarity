@@ -4,6 +4,7 @@ import { Spinner } from './ui/index.jsx';
 import { useNavigate } from 'react-router-dom';
 import { useLanguage } from '../context/LanguageContext';
 import { auth } from '../firebase';
+import config from '../config';
 
 const ACCEPTED_TYPES = {
     'application/pdf': { label: 'PDF Report', icon: FileText },
@@ -44,7 +45,7 @@ export default function UploadArea({ onSuccess }) {
         formData.append('report', file);
         try {
             const token = auth.currentUser ? await auth.currentUser.getIdToken() : '';
-            const res = await fetch('http://localhost:5000/api/upload', { 
+            const res = await fetch(`${config.API_BASE}/api/upload`, { 
                 method: 'POST', 
                 body: formData,
                 headers: { ...(token && { Authorization: `Bearer ${token}` }) } 
@@ -54,7 +55,7 @@ export default function UploadArea({ onSuccess }) {
                 // Post upload success, now trigger analyze
                 setMessage(t('common.processing'));
 
-                const analyzeRes = await fetch('http://localhost:5000/api/analyze', {
+                const analyzeRes = await fetch(`${config.API_BASE}/api/analyze`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', ...(token && { Authorization: `Bearer ${token}` }) },
                     body: JSON.stringify({ 
@@ -81,14 +82,14 @@ export default function UploadArea({ onSuccess }) {
 
                     // 🎉 Sync with History API (Phase 1 In-Memory)
                     try {
-                        await fetch('http://localhost:5000/api/history', {
+                        await fetch(`${config.API_BASE}/api/history`, {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json', ...(token && { Authorization: `Bearer ${token}` }) },
                             body: JSON.stringify({
                                 name: data.file.originalName,
                                 filename: data.file.filename,
                                 date: new Date().toLocaleDateString(),
-                                type: 'Blood Report',
+                                type: geminiResult.report_type || 'Blood Report',
                                 status: (geminiResult.overall_status || 'Normal').toLowerCase(),
                                 score: geminiResult.health_score || 75,
                                 size: (data.file.size / 1024).toFixed(1) + ' KB',
@@ -171,7 +172,7 @@ export default function UploadArea({ onSuccess }) {
             <div style={{ marginTop: '1.25rem' }}>
                 {status === 'idle' && (
                     <button className="btn btn-primary btn-lg" style={{ width: '100%' }} onClick={handleUpload} disabled={!file}>
-                        {file ? `${t('common.analyze_report')} →` : t('common.select_language')}
+                        {t('common.analyze_report')} {file && ' →'}
                     </button>
                 )}
 

@@ -3,16 +3,22 @@ import { FileText, Trash2, Eye, Loader2 } from 'lucide-react';
 import { Badge, EmptyState } from '../components/ui/index.jsx';
 import { Link, useNavigate } from 'react-router-dom';
 import { useLanguage } from '../context/LanguageContext';
+import config from '../config';
 import { auth } from '../firebase';
 
 const statusMap = {
     normal: { label: 'Normal', type: 'success' },
+    excellent: { label: 'Excellent', type: 'success' },
+    good: { label: 'Good', type: 'success' },
     moderate: { label: 'Moderate', type: 'warning' },
+    needs_attention: { label: 'Needs Attention', type: 'warning' },
     high: { label: 'High Risk', type: 'error' },
     high_risk: { label: 'High Risk', type: 'error' },
+    needs_medical_attention: { label: 'Medical Attention', type: 'error' },
+    urgent: { label: 'Urgent', type: 'error' },
 };
 
-const typeOptions = ['All', 'Blood Report', 'X-Ray', 'CT Scan'];
+const typeOptions = ['All', 'Blood Report', 'X-Ray'];
 
 export default function History() {
     const { t, language } = useLanguage();
@@ -29,7 +35,7 @@ export default function History() {
         try {
             setLoading(true);
             const token = auth.currentUser ? await auth.currentUser.getIdToken() : '';
-            const res = await fetch('http://localhost:5000/api/history', {
+            const res = await fetch(`${config.API_BASE}/api/history`, {
                 headers: { ...(token && { Authorization: `Bearer ${token}` }) }
             });
             const data = await res.json();
@@ -46,7 +52,7 @@ export default function History() {
     const remove = async (id) => {
         try {
             const token = auth.currentUser ? await auth.currentUser.getIdToken() : '';
-            const res = await fetch(`http://localhost:5000/api/history/${id}`, { 
+            const res = await fetch(`${config.API_BASE}/api/history/${id}`, { 
                 method: 'DELETE',
                 headers: { ...(token && { Authorization: `Bearer ${token}` }) }
             });
@@ -63,8 +69,7 @@ export default function History() {
     const typeMapping = {
         'All': t('common.all'),
         'Blood Report': t('common.blood_report'),
-        'X-Ray': t('common.x_ray'),
-        'CT Scan': t('common.ct_scan')
+        'X-Ray': t('common.x_ray')
     };
 
     return (
@@ -137,10 +142,22 @@ export default function History() {
                                             </div>
                                         </td>
                                         <td className="text-muted text-sm">{r.date}</td>
-                                        <td><Badge type="neutral">{t(`common.${(r.type || 'Blood Report').toLowerCase().replace(' ', '_')}`)}</Badge></td>
+                                        <td>
+                                            <Badge type="neutral">
+                                                {(() => {
+                                                    const key = `common.${(r.type || 'Blood Report').toLowerCase().trim().replace(/[^a-z0-9]+/g, '_')}`;
+                                                    const translated = t(key);
+                                                    return translated === key ? r.type : translated;
+                                                })()}
+                                            </Badge>
+                                        </td>
                                         <td>
                                             <Badge type={statusMap[r.status]?.type || 'neutral'} dot>
-                                                {t(`common.${r.status}`) || r.status}
+                                                {(() => {
+                                                    const key = `common.${(r.status || '').toLowerCase().trim().replace(/[^a-z0-9]+/g, '_')}`;
+                                                    const translated = t(key);
+                                                    return translated === key ? (r.status || 'Normal') : translated;
+                                                })()}
                                             </Badge>
                                         </td>
                                         <td>
@@ -151,7 +168,7 @@ export default function History() {
                                         <td>
                                             <div style={{ display: 'flex', gap: '0.5rem' }}>
                                                 <button 
-                                                    onClick={() => navigate('/results', { state: { result: r.result, lang: language } })}
+                                                    onClick={() => navigate('/results', { state: { result: r.result, lang: language, type: r.type, record: r } })}
                                                     className="btn btn-outline btn-sm"
                                                 >
                                                     <Eye size={13} /> {t('common.view')}

@@ -40,7 +40,17 @@ yarn-error.log*
 # Project specific
 backend/node_modules/
 backend/uploads/
+backend/ai-service/uploads/
+backend/ai-service/__pycache__/
+backend/ai-service/dist/
+backend/ai-service/.env
 frontend/node_modules/
 .env
+*.log
+backend/serviceAccount.json
 backend/firebase-service-account.json.json
 backend/test_fs.js
+backend/billing_test_final.log
+backend/vertex_test.log
+frontend/eslint2.json
+frontend/eslint_out.json

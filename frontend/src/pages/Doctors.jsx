@@ -4,8 +4,9 @@ import { MapPin, Star, Phone, Clock, Loader, AlertCircle } from 'lucide-react';
 import { Badge } from '../components/ui/index.jsx';
 import { useLanguage } from '../context/LanguageContext';
 import { auth } from '../firebase';
+import config from '../config';
 
-const API_BASE = 'http://localhost:5000';
+const API_BASE = config.API_BASE;
 
 export default function Doctors() {
     const { t } = useLanguage();

@@ -9,8 +9,8 @@ const requireAuth = require('./middleware/authMiddleware');
 
 // ── Firebase Admin Initialization ──────────────────────────────────────────────
 try {
-    // We are pointing to the JSON file you added to the backend folder
-    const serviceAccount = require('./firebase-service-account.json.json');
+    // We are pointing to the standardized service account file
+    const serviceAccount = require('./serviceAccount.json');
     
     admin.initializeApp({ 
         credential: admin.credential.cert(serviceAccount) 

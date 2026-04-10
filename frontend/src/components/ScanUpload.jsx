@@ -1,20 +1,24 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Upload, FileSearch, CheckCircle2, AlertCircle, Loader2, Activity, Stethoscope, Image as ImageIcon, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Upload, FileSearch, CheckCircle2, AlertCircle, Loader2, Activity, Stethoscope, Image as ImageIcon, ChevronLeft, ChevronRight, TrendingUp, TrendingDown, History } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
 import { AiProcessingStepper } from './ui/AiProcessingStepper';
 import { auth } from '../firebase';
+import config from '../config';
+import { getRecommendedDoctor } from '../utils/specialtyMapper';
 
 export default function ScanUpload() {
     const navigate = useNavigate();
-    const { t } = useLanguage();
+    const { language, t } = useLanguage();
+    const displayLang = language;
     const [file, setFile] = useState(null);
     const [previewUrl, setPreviewUrl] = useState(null);
     const [loading, setLoading] = useState(false);
     const [result, setResult] = useState(null);
     const [error, setError] = useState(null);
     const [currentCard, setCurrentCard] = useState(0);
+    const [trendData, setTrendData] = useState(null);
 
     // Cleanup object URL
     useEffect(() => {
@@ -47,7 +51,7 @@ export default function ScanUpload() {
 
         try {
             const token = auth.currentUser ? await auth.currentUser.getIdToken() : '';
-            const response = await fetch("http://localhost:5000/api/scan", {
+            const response = await fetch(`${config.API_BASE}/api/scan`, {
                 method: "POST",
                 body: formData,
                 headers: { ...(token && { Authorization: `Bearer ${token}` }) }
@@ -60,6 +64,50 @@ export default function ScanUpload() {
             const data = await response.json();
             setResult(data);
             
+            // Check historical trend
+            try {
+                const historyRes = await fetch(`${config.API_BASE}/api/history`, {
+                    headers: { ...(token && { Authorization: `Bearer ${token}` }) }
+                });
+                const historyData = await historyRes.json();
+                if (historyData.success && historyData.records) {
+                    const xrReports = historyData.records.filter(r => r.type === 'X-Ray');
+                    // Find most recent previous X-Ray (before saving current)
+                    const prevXR = xrReports[0]; 
+                    if (prevXR) {
+                        const prevPred = prevXR.result?.tests?.[0]?.value?.toLowerCase() || '';
+                        const currPred = data.prediction?.toLowerCase() || '';
+                        
+                        const currRisk = getRecommendedDoctor(currPred, data.confidence).riskLevel;
+                        const prevRisk = getRecommendedDoctor(prevPred, (prevXR.score || 0) / 100).riskLevel;
+
+                        let trendLabel = 'Stable';
+                        let trendIcon = 'stable';
+
+                        if (prevRisk !== 'Low' && currRisk === 'Low') {
+                            trendLabel = 'Improved';
+                            trendIcon = 'improved';
+                        } else if (prevRisk === 'Low' && currRisk !== 'Low') {
+                            trendLabel = 'Worsened';
+                            trendIcon = 'worsened';
+                        } else if (prevRisk === currRisk && currRisk !== 'Low') {
+                            const confDiff = data.confidence - (prevXR.score/100);
+                            if (confDiff > 0.08) {
+                                trendLabel = 'Worsened';
+                                trendIcon = 'worsened';
+                            } else if (confDiff < -0.08) {
+                                trendLabel = 'Improved';
+                                trendIcon = 'improved';
+                            }
+                        }
+                        
+                        setTrendData({ label: trendLabel, icon: trendIcon, prevCondition: prevPred, currCondition: currPred, prevDate: prevXR.date, prevConfidence: prevXR.score });
+                    }
+                }
+            } catch(e) {
+                console.error("Trend check failed", e);
+            }
+
             // Save the X-Ray scan to the user's history
             try {
                 const score = data.confidence ? Math.round(data.confidence * 100) : 0;
@@ -79,7 +127,7 @@ export default function ScanUpload() {
                     }]
                 };
 
-                await fetch('http://localhost:5000/api/history', {
+                await fetch(`${config.API_BASE}/api/history`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', ...(token && { Authorization: `Bearer ${token}` }) },
                     body: JSON.stringify({
@@ -103,66 +151,7 @@ export default function ScanUpload() {
         }
     };
 
-    // Helper logic to map risk and doctor specifically without fake insights
-    const getResultExtras = (prediction, confidence) => {
-        let riskLevel = "Low";
-        let riskClass = "badge-success";
-        let doctor = "General Physician";
-
-        const predLower = prediction?.toLowerCase() || "";
-        
-        // Dictionary-based specialty routing
-        const pulmonologist = ["pneumonia", "covid", "coronavirus", "effusion", "atelectasis", "infiltration", "emphysema", "pneumothorax", "consolidation", "edema", "fibrosis", "pleural", "tb", "tuberculosis", "lung", "chest", "asthma"];
-        const oncologist = ["tumor", "cancer", "nodule", "mass", "malignant", "carcinoma", "melanoma", "cyst", "neoplasm"];
-        const cardiologist = ["cardiomegaly", "heart", "cardio", "vascular", "aorta", "arrhythmia", "ischemia", "valve"];
-        const orthopedist = ["fracture", "bone", "joint", "osteo", "arthritis", "spine", "disk", "hernia", "scoliosis", "skeletal"];
-        const neurologist = ["brain", "stroke", "hemorrhage", "aneurysm", "neuro", "nerve", "cognitive"];
-        const normal = ["normal", "healthy", "none", "clear", "unremarkable"];
-
-        if (oncologist.some(w => predLower.includes(w))) {
-            riskLevel = "High";
-            riskClass = "badge-error";
-            doctor = "Oncologist";
-        } else if (cardiologist.some(w => predLower.includes(w))) {
-            riskLevel = "High";
-            riskClass = "badge-error";
-            doctor = "Cardiologist";
-        } else if (neurologist.some(w => predLower.includes(w))) {
-            riskLevel = "High";
-            riskClass = "badge-error";
-            doctor = "Neurologist";
-        } else if (pulmonologist.some(w => predLower.includes(w))) {
-            riskLevel = "High";
-            riskClass = "badge-error";
-            doctor = "Pulmonologist";
-        } else if (orthopedist.some(w => predLower.includes(w))) {
-            riskLevel = confidence > 0.6 ? "High" : "Medium";
-            riskClass = confidence > 0.6 ? "badge-error" : "badge-warning";
-            doctor = "Orthopedist";
-        } else if (normal.some(w => predLower.includes(w))) {
-            riskLevel = "Low";
-            riskClass = "badge-success";
-            doctor = "General Physician";
-        } else {
-            // Fallback for unknown conditions
-            if (confidence >= 0.7) {
-                 riskLevel = "High";
-                 riskClass = "badge-error";
-            } else if (confidence >= 0.4) {
-                 riskLevel = "Medium";
-                 riskClass = "badge-warning";
-            } else {
-                 riskLevel = "Low";
-                 riskClass = "badge-success";
-            }
-            // Default to GP for completely unrecognizable but flagged inputs
-            doctor = "General Physician";
-        }
-
-        return { riskLevel, riskClass, doctor };
-    };
-
-    const resultExtras = result ? getResultExtras(result.prediction, result.confidence) : null;
+    const resultExtras = result ? getRecommendedDoctor(result.prediction, result.confidence) : null;
 
     return (
         <>
@@ -331,9 +320,9 @@ export default function ScanUpload() {
                                         <ChevronLeft size={20} />
                                     </button>
                                     <button 
-                                        onClick={() => setCurrentCard(c => Math.min(2, c + 1))}
-                                        disabled={currentCard === 2}
-                                        style={{ background: 'none', border: 'none', cursor: currentCard === 2 ? 'default' : 'pointer', opacity: currentCard === 2 ? 0.3 : 1, padding: 4 }}
+                                        onClick={() => setCurrentCard(c => Math.min(trendData ? 3 : 2, c + 1))}
+                                        disabled={currentCard === (trendData ? 3 : 2)}
+                                        style={{ background: 'none', border: 'none', cursor: currentCard === (trendData ? 3 : 2) ? 'default' : 'pointer', opacity: currentCard === (trendData ? 3 : 2) ? 0.3 : 1, padding: 4 }}
                                     >
                                         <ChevronRight size={20} />
                                     </button>
@@ -497,12 +486,75 @@ export default function ScanUpload() {
                                             </div>
                                         </motion.div>
                                     )}
+
+                                    {currentCard === 3 && trendData && (
+                                        <motion.div 
+                                            key="card-trend"
+                                            initial={{ opacity: 0, scale: 0.95 }}
+                                            animate={{ opacity: 1, scale: 1 }}
+                                            exit={{ opacity: 0, scale: 1.05 }}
+                                            transition={{ duration: 0.4 }}
+                                            style={{ height: '100%', display: 'flex', flexDirection: 'column' }}
+                                        >
+                                            <div style={{ 
+                                                flex: 1, padding: '2.25rem', borderRadius: '24px', 
+                                                background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border)',
+                                                position: 'relative', backdropFilter: 'blur(10px)',
+                                                display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center'
+                                            }}>
+                                                <div style={{ 
+                                                    width: 64, height: 64, borderRadius: '16px', 
+                                                    background: trendData.icon === 'improved' ? 'rgba(16,185,129,0.1)' : trendData.icon === 'worsened' ? 'rgba(239,68,68,0.1)' : 'rgba(107,114,128,0.1)', 
+                                                    color: trendData.icon === 'improved' ? '#10b981' : trendData.icon === 'worsened' ? '#ef4444' : '#6b7280', 
+                                                    display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '1.25rem' 
+                                                }}>
+                                                    {trendData.icon === 'improved' ? <TrendingDown size={32} /> : trendData.icon === 'worsened' ? <TrendingUp size={32} /> : <History size={32} />}
+                                                </div>
+                                                
+                                                <h3 style={{ fontSize: '1.6rem', fontWeight: 900, margin: '0 0 0.5rem', color: 'var(--text)' }}>
+                                                    {trendData.label === 'Improved' ? (displayLang === 'hi' ? 'सुधार देखा गया' : 'Improvement Detected') : 
+                                                     trendData.label === 'Worsened' ? (displayLang === 'hi' ? 'गिरावट देखी गई' : 'Condition Worsening') : 
+                                                     (displayLang === 'hi' ? 'स्थिति स्थिर है' : 'Condition Stable')}
+                                                </h3>
+                                                
+                                                <p style={{ fontSize: '0.9rem', color: 'var(--text-muted)', marginBottom: '2rem', textAlign: 'center', maxWidth: '80%' }}>
+                                                    {displayLang === 'hi' ? `आपके ${trendData.prevDate} के पिछले स्कैन की तुलना में।` : `Compared to your previous scan on ${trendData.prevDate}.`}
+                                                </p>
+
+                                                <div style={{ width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--primary-light)', padding: '1.25rem', borderRadius: '16px', border: '1px solid var(--border)' }}>
+                                                    <div style={{ textAlign: 'center', flex: 1 }}>
+                                                        <div style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: 4 }}>
+                                                            {displayLang === 'hi' ? 'पिछला' : 'Previous'}
+                                                        </div>
+                                                        <div style={{ fontSize: '1.1rem', fontWeight: 800, color: 'var(--text)' }}>
+                                                            {trendData.prevCondition.charAt(0).toUpperCase() + trendData.prevCondition.slice(1)}
+                                                        </div>
+                                                        <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{trendData.prevConfidence}%</div>
+                                                    </div>
+                                                    
+                                                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 40, color: 'var(--text-muted)' }}>
+                                                        <ChevronRight size={24} />
+                                                    </div>
+
+                                                    <div style={{ textAlign: 'center', flex: 1 }}>
+                                                        <div style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: 4 }}>
+                                                            {displayLang === 'hi' ? 'वर्तमान' : 'Current'}
+                                                        </div>
+                                                        <div style={{ fontSize: '1.1rem', fontWeight: 800, color: trendData.icon === 'improved' ? '#10b981' : trendData.icon === 'worsened' ? '#ef4444' : 'var(--text)' }}>
+                                                            {trendData.currCondition.charAt(0).toUpperCase() + trendData.currCondition.slice(1)}
+                                                        </div>
+                                                        <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{(result.confidence * 100).toFixed(0)}%</div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </motion.div>
+                                    )}
                                 </AnimatePresence>
                             </div>
 
                             {/* Carousel Indicators (Dots) */}
                             <div style={{ display: 'flex', justifyContent: 'center', gap: '0.6rem', marginTop: '1.25rem' }}>
-                                {[0, 1, 2].map((idx) => (
+                                {Array.from({ length: trendData ? 4 : 3 }).map((_, idx) => (
                                     <button 
                                         key={idx}
                                         onClick={() => setCurrentCard(idx)}

@@ -3,6 +3,7 @@ import { FileText, Activity, TrendingUp, Users, ArrowRight, Clock } from 'lucide
 import { Link, useNavigate } from 'react-router-dom';
 import { StatCard, Badge, HealthScore } from '../components/ui/index.jsx';
 import { useLanguage } from '../context/LanguageContext';
+import config from '../config';
 import { auth } from '../firebase';
 
 export default function Dashboard() {
@@ -24,7 +25,7 @@ export default function Dashboard() {
             try {
                 if (!user) return;
                 const token = await user.getIdToken();
-                const res = await fetch('http://localhost:5000/api/history', {
+                const res = await fetch(`${config.API_BASE}/api/history`, {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
                 const data = await res.json();

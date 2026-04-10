@@ -7,7 +7,6 @@ export default function Upload() {
 
     const fileTypes = [
         { icon: FileText, label: t('upload.file_types.medical_reports'), desc: t('upload.file_types.medical_reports_desc') },
-        { icon: Scan, label: t('upload.file_types.ct_scans'), desc: t('upload.file_types.ct_scans_desc') },
         { icon: ImageIcon, label: t('upload.file_types.xray_images'), desc: t('upload.file_types.xray_images_desc') },
         { icon: Droplets, label: t('upload.file_types.other_reports'), desc: t('upload.file_types.other_reports_desc') },
     ];

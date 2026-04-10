@@ -105,8 +105,9 @@ exports.analyzeReport = async (req, res) => {
         formData.append("file", fs.createReadStream(filePath));
 
         // Send to Python AI server
+        const SCAN_URL = process.env.SCAN_SERVICE_URL || 'http://127.0.0.1:8000';
         const response = await axios.post(
-            "http://127.0.0.1:8000/analyze_report",
+            `${SCAN_URL}/analyze_report`,
             formData,
             {
                 headers: formData.getHeaders(),

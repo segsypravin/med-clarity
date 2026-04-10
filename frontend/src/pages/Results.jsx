@@ -1,11 +1,13 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { RefreshCw, FileText, AlertTriangle, Loader2, Info, TrendingUp, TrendingDown, CheckCircle2, Activity, ChevronLeft, ChevronRight, Lightbulb, Stethoscope, HeartPulse, Zap, MessageCircle, LayoutGrid, Maximize, Volume2, VolumeX } from 'lucide-react';
+import { RefreshCw, FileText, AlertTriangle, Loader2, Info, TrendingUp, TrendingDown, CheckCircle2, Activity, ChevronLeft, ChevronRight, Lightbulb, Stethoscope, HeartPulse, Zap, MessageCircle, LayoutGrid, Maximize, Volume2, VolumeX, X, History } from 'lucide-react';
 import { HealthScore } from '../components/ui/index.jsx';
 import ChatDrawer from '../components/ChatDrawer.jsx';
-import { Link, useLocation } from 'react-router-dom';
+import XRayResultsDashboard from '../components/XRayResultsDashboard.jsx';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useLanguage } from '../context/LanguageContext';
 import { auth } from '../firebase';
+import config from '../config';
 import {
     PieChart, Pie, Cell, ResponsiveContainer
 } from 'recharts';
@@ -48,14 +50,22 @@ function getTheme(status) {
 
 // ── Range Bar: visual bar with normal zone + value marker ────────────────────
 function RangeBar({ value, normalRange, status, theme }) {
-    const numVal = parseFloat(String(value).replace(/[^0-9.]/g, ''));
+    // Strip commas from value, then remove non-numerics (but keep dot and minus)
+    const numValStr = String(value).replace(/,/g, '').replace(/[^0-9.-]/g, '');
+    const numVal = parseFloat(numValStr);
     let lo = 0, hi = 100, rangeMin = 0, rangeMax = 200;
 
     if (normalRange && normalRange !== '-') {
-        const nums = normalRange.match(/[\d.]+/g);
+        const cleanNormalRange = String(normalRange).replace(/,/g, '');
+        const nums = cleanNormalRange.match(/[\d.]+/g);
         if (nums && nums.length >= 2) {
             lo = parseFloat(nums[0]);
             hi = parseFloat(nums[1]);
+            if (lo > hi) {
+                const temp = lo;
+                lo = hi;
+                hi = temp;
+            }
             rangeMin = Math.max(0, lo - (hi - lo) * 0.6);
             rangeMax = hi + (hi - lo) * 0.6;
         }
@@ -233,14 +243,16 @@ function FlashCard({ test, index, total, txt, displayLang }) {
                 </span>
             </motion.div>
 
-            <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 0.3 }}
-                style={{ position: 'relative', zIndex: 1, marginBottom: '1.25rem' }}
-            >
-                <RangeBar value={test.value} normalRange={test.normal_range} status={test.status} theme={theme} />
-            </motion.div>
+            {test.unit !== 'N/A' && test.value !== 'N/A' && (
+                <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ delay: 0.3 }}
+                    style={{ position: 'relative', zIndex: 1, marginBottom: '1.25rem' }}
+                >
+                    <RangeBar value={test.value} normalRange={test.normal_range} status={test.status} theme={theme} />
+                </motion.div>
+            )}
 
             <motion.div
                 initial={{ y: 15, opacity: 0 }}
@@ -305,12 +317,17 @@ function FlashCard({ test, index, total, txt, displayLang }) {
 
 export default function Results() {
     const location = useLocation();
+    const navigate = useNavigate();
     const { language: displayLang, t } = useLanguage();
 
     const [result, setResult] = useState(() => {
         const raw = location.state?.result;
         return raw?.result || raw || null;
     });
+    
+    const isXRay = location.state?.type === 'X-Ray';
+    const historyRecord = location.state?.record;
+
     const [isTranslating, setIsTranslating] = useState(false);
     const [isChatOpen, setIsChatOpen] = useState(false);
     const [isGalleryView, setIsGalleryView] = useState(false);
@@ -318,6 +335,12 @@ export default function Results() {
     const [direction, setDirection] = useState(0); 
     const [sortBy, setSortBy] = useState('default');
     const [isSpeaking, setIsSpeaking] = useState(false);
+    
+    // Trend Analysis State
+    const [isFetchingTrend, setIsFetchingTrend] = useState(false);
+    const [trendData, setTrendData] = useState(null);
+    const [showTrendModal, setShowTrendModal] = useState(false);
+
     const lastTranslatedLang = useRef(result?.lang || 'en');
 
     useEffect(() => {
@@ -327,7 +350,7 @@ export default function Results() {
             setIsTranslating(true);
             try {
                 const token = auth.currentUser ? await auth.currentUser.getIdToken() : '';
-                const res = await fetch('http://localhost:5000/translate_result', {
+                const res = await fetch(`${config.API_BASE}/api/analyze/translate`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', ...(token && { Authorization: `Bearer ${token}` }) },
                     body: JSON.stringify({ data: result, lang: displayLang })
@@ -396,6 +419,157 @@ export default function Results() {
         return () => window.removeEventListener('keydown', handleKey);
     }, [goNext, goPrev]);
 
+    const handleTrendAnalysis = async () => {
+        setIsFetchingTrend(true);
+        try {
+            const token = auth.currentUser ? await auth.currentUser.getIdToken() : '';
+            const res = await fetch(`${config.API_BASE}/api/history`, {
+            headers: { ...(token && { Authorization: `Bearer ${token}` }) }
+            });
+            const data = await res.json();
+            
+            if (data.success && data.records) {
+                // Determine current report type
+                const currentType = (result?.report_type || historyRecord?.type || 'Blood Report').toLowerCase();
+                
+                // Helper to check if two report types are "similar enough"
+                const areSimilar = (t1, t2) => {
+                    const cleanT1 = (t1 || '').toLowerCase();
+                    const cleanT2 = (t2 || '').toLowerCase();
+                    if (cleanT1 === cleanT2) return true;
+                    // Common keywords to group reports
+                    const groups = ['blood', 'urine', 'thyroid', 'kidney', 'liver', 'lipid'];
+                    for (const group of groups) {
+                        if (cleanT1.includes(group) && cleanT2.includes(group)) return true;
+                    }
+                    return false;
+                };
+
+                // Filter history for SIMILAR types
+                const similarReports = data.records.filter(r => {
+                    return areSimilar(r.type, currentType);
+                });
+
+                let prevReport = null;
+                
+                if (similarReports.length > 0) {
+                    // Skip current if it matches exactly (already saved)
+                    if (JSON.stringify(similarReports[0].result?.tests) === JSON.stringify(result.tests)) {
+                        prevReport = similarReports[1];
+                    } else {
+                        prevReport = similarReports[0];
+                    }
+                }
+
+                if (prevReport && prevReport.result && prevReport.result.tests) {
+                    const cleanName = (s) => (s || '').toLowerCase().replace(/\(.*\)/g, '').replace(/[^a-z0-9]/g, '').trim();
+                    const isSameTest = (n1, n2) => {
+                        const s1 = cleanName(n1);
+                        const s2 = cleanName(n2);
+                        if (!s1 || !s2) return false;
+                        if (s1 === s2) return true;
+                        
+                        // Handle common synonyms and spelling variations
+                        const synonyms = [
+                            ['hb', 'hemoglobin'],
+                            ['hb', 'haemoglobin'],
+                            ['hgb', 'hemoglobin'],
+                            ['hgb', 'haemoglobin'],
+                            ['hemoglobin', 'haemoglobin'],
+                            ['rbc', 'redbloodcell'],
+                            ['rbccount', 'redbloodcellcount'],
+                            ['rbccount', 'rbc'],
+                            ['wbc', 'whitebloodcell'],
+                            ['wbccount', 'whitebloodcellcount'],
+                            ['wbccount', 'wbc'],
+                            ['plt', 'platelet'],
+                            ['pltcount', 'plateletcount'],
+                            ['pltcount', 'platelet'],
+                            ['hct', 'hematocrit'],
+                            ['cbc', 'completebloodcount']
+                        ];
+                        if (synonyms.some(([a, b]) => (s1 === a && s2 === b) || (s1 === b && s2 === a))) return true;
+
+                        // Check if one starts with the other or contains significant parts
+                        if (s1.includes(s2) && s2.length > 2) return true;
+                        if (s2.includes(s1) && s1.length > 2) return true;
+
+                        return false;
+                    };
+
+                    const comparison = result.tests.map(currTest => {
+                        const testName = currTest.test || currTest.name;
+                        const prevMatch = prevReport.result.tests.find(t => isSameTest(t.test || t.name, testName));
+                        
+                        let trend = 'stable';
+                        let impact = 'neutral';
+
+                        if (prevMatch) {
+                            const cVal = parseFloat(String(currTest.value).replace(/[^0-9.]/g, ''));
+                            const pVal = parseFloat(String(prevMatch.value).replace(/[^0-9.]/g, ''));
+                            
+                            const cStat = currTest.status?.toLowerCase();
+                            const pStat = prevMatch.status?.toLowerCase();
+
+                            // 1. Determine Trend Direction
+                            if (!isNaN(cVal) && !isNaN(pVal)) {
+                                if (cVal > pVal) trend = 'up';
+                                else if (cVal < pVal) trend = 'down';
+                            }
+
+                            // 2. Determine Health Impact (Medical Improvement Logic)
+                            const isCurrentlyNormal = cStat === 'normal';
+                            const wasPreviouslyNormal = pStat === 'normal';
+
+                            if (isCurrentlyNormal) {
+                                impact = 'improved'; // Reaching or staying in normal is always good
+                            } else if (cStat === 'high' && trend === 'down') {
+                                impact = 'improved'; // Getting closer to normal from top
+                            } else if (cStat === 'low' && trend === 'up') {
+                                impact = 'improved'; // Getting closer to normal from bottom
+                            } else if (!isCurrentlyNormal && wasPreviouslyNormal) {
+                                impact = 'worsened'; // Moved out of normal range
+                            } else if (cStat === 'high' && trend === 'up') {
+                                impact = 'worsened'; // Getting worse (higher)
+                            } else if (cStat === 'low' && trend === 'down') {
+                                impact = 'worsened'; // Getting worse (lower)
+                            } else {
+                                impact = 'stable';
+                            }
+                        }
+
+                        return {
+                            name: testName,
+                            current: currTest.value,
+                            previous: prevMatch ? prevMatch.value : '—',
+                            unit: currTest.unit,
+                            status: currTest.status?.toLowerCase(),
+                            prevStatus: prevMatch ? prevMatch.status?.toLowerCase() : null,
+                            trend,
+                            impact
+                        };
+                    });
+
+                    setTrendData({ 
+                        date: prevReport.date, 
+                        comparison,
+                        prevScore: prevReport.score || prevReport.result?.health_score
+                    });
+                } else {
+                    setTrendData({ error: displayLang === 'hi' ? 'तुलना करने के लिए कोई पिछली रिपोर्ट नहीं मिली।' : 'No previous reports found to compare with.' });
+                }
+            } else {
+                setTrendData({ error: 'Failed to fetch history.' });
+            }
+        } catch (err) {
+            console.error(err);
+            setTrendData({ error: 'Cannot connect to server.' });
+        } finally {
+            setIsFetchingTrend(false);
+            setShowTrendModal(true);
+        }
+    };
+
     if (!result) {
         return (
             <div className="page-body animate-fade-up" style={{ textAlign: 'center', padding: '6rem 1rem' }}>
@@ -407,6 +581,29 @@ export default function Results() {
                 <Link to="/upload" className="btn btn-primary">
                     <FileText size={16} /> {t('results.go_to_upload')}
                 </Link>
+            </div>
+        );
+    }
+
+    if (isXRay) {
+        return (
+            <div style={{ paddingBottom: '6rem' }}>
+                <div className="page-header" style={{ marginBottom: '2rem' }}>
+                    <div className="page-header-left">
+                        <button className="btn btn-ghost" style={{ padding: 8, marginRight: 8, border: '1px solid var(--border)', background: 'var(--surface)' }} onClick={() => navigate(-1)}>
+                            <ChevronLeft size={18} />
+                        </button>
+                        <div>
+                            <h1 style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                                X-Ray Analysis Results
+                            </h1>
+                            <p>AI-powered insights based on your medical scan.</p>
+                        </div>
+                    </div>
+                </div>
+                <div className="page-body animate-fade-up">
+                    <XRayResultsDashboard record={historyRecord || result} />
+                </div>
             </div>
         );
     }
@@ -495,9 +692,21 @@ export default function Results() {
                                         <option value="normal" style={{ background: '#ffffff', color: '#000000' }}>{displayLang === 'hi' ? 'सॉर्ट: सामान्य' : 'Sort: Normal First'}</option>
                                     </select>
                                 ) : (
-                                    <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)', background: 'var(--surface)', padding: '4px 12px', borderRadius: 20, border: '1px solid var(--border)' }}>
-                                        Use ← → arrows
-                                    </span>
+                                    <button 
+                                        onClick={handleTrendAnalysis}
+                                        disabled={isFetchingTrend}
+                                        style={{ 
+                                            display: 'flex', alignItems: 'center', gap: 6,
+                                            background: 'var(--primary)', color: 'white',
+                                            border: 'none', padding: '6px 14px', 
+                                            borderRadius: 20, fontSize: '0.75rem', fontWeight: 700, 
+                                            cursor: isFetchingTrend ? 'not-allowed' : 'pointer', transition: 'all 0.2s',
+                                            boxShadow: '0 4px 10px rgba(192,21,42,0.3)'
+                                        }}
+                                    >
+                                        {isFetchingTrend ? <Loader2 size={14} className="animate-spin" /> : <TrendingUp size={14} />}
+                                        {displayLang === 'hi' ? 'ट्रेंड विश्लेषण' : 'Trend Analysis'}
+                                    </button>
                                 )}
                             </div>
                         </div>
@@ -745,6 +954,116 @@ export default function Results() {
 
                 <ChatDrawer isOpen={isChatOpen} onClose={() => setIsChatOpen(false)} reportData={result} />
             </motion.div>
+
+            {/* ── TREND ANALYSIS MODAL ── */}
+            <AnimatePresence>
+                {showTrendModal && (
+                    <motion.div
+                        initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                        style={{
+                            position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+                            background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)',
+                            display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '1rem'
+                        }}
+                        onClick={() => setShowTrendModal(false)}
+                    >
+                        <motion.div
+                            initial={{ scale: 0.9, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.9, y: 20 }}
+                            style={{
+                                background: 'var(--surface)', color: 'var(--text)', borderRadius: 24, padding: '2rem',
+                                width: '100%', maxWidth: 500, maxHeight: '90vh', overflowY: 'auto',
+                                position: 'relative', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.5)',
+                                border: '1px solid var(--border)'
+                            }}
+                            onClick={e => e.stopPropagation()}
+                        >
+                            <button 
+                                onClick={() => setShowTrendModal(false)}
+                                style={{ position: 'absolute', top: 20, right: 20, background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)' }}
+                            >
+                                <X size={24} />
+                            </button>
+
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: '1.5rem' }}>
+                                <div style={{ width: 44, height: 44, borderRadius: 12, background: 'var(--primary-light)', color: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                    <History size={24} />
+                                </div>
+                                <div>
+                                    <h2 style={{ margin: 0, fontSize: '1.4rem', fontWeight: 800 }}>{displayLang === 'hi' ? 'ट्रेंड विश्लेषण' : 'Trend Analysis'}</h2>
+                                    <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--text-muted)' }}>
+                                        {trendData?.date ? `${displayLang === 'hi' ? 'तुलना की जा रही है' : 'Compared with'} ${trendData.date}` : displayLang === 'hi' ? 'ऐतिहासिक डेटा की जाच' : 'Checking historical data'}
+                                    </p>
+                                </div>
+                            </div>
+
+                            {trendData?.error ? (
+                                <div style={{ background: 'var(--surface)', padding: '1.5rem', borderRadius: 16, textAlign: 'center', border: '1px dashed var(--border)' }}>
+                                    <AlertTriangle size={32} color="var(--text-muted)" style={{ marginBottom: '1rem' }} />
+                                    <p style={{ margin: 0, fontWeight: 600 }}>{trendData.error}</p>
+                                </div>
+                            ) : (
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+                                    {/* Score Comparison Header */}
+                                    <div style={{ display: 'flex', gap: '1rem', marginBottom: '0.5rem' }}>
+                                        <div style={{ flex: 1, background: 'rgba(255,255,255,0.03)', border: '1px solid var(--border)', borderRadius: 16, padding: '1rem', textAlign: 'center' }}>
+                                            <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginBottom: 4 }}>PREVIOUS SCORE</div>
+                                            <div style={{ fontSize: '1.5rem', fontWeight: 900 }}>{trendData.prevScore || '—'}</div>
+                                        </div>
+                                        <div style={{ 
+                                            flex: 1, 
+                                            background: result.health_score >= 80 ? 'rgba(16, 185, 129, 0.1)' : result.health_score >= 60 ? 'rgba(245, 158, 11, 0.1)' : 'var(--primary-light)', 
+                                            border: result.health_score >= 80 ? '1px solid #10b981' : result.health_score >= 60 ? '1px solid #f59e0b' : '1px solid var(--primary)', 
+                                            borderRadius: 16, padding: '1rem', textAlign: 'center', 
+                                            color: result.health_score >= 80 ? '#10b981' : result.health_score >= 60 ? '#f59e0b' : 'var(--primary)' 
+                                        }}>
+                                            <div style={{ fontSize: '0.7rem', opacity: 0.8, marginBottom: 4 }}>CURRENT SCORE</div>
+                                            <div style={{ fontSize: '1.5rem', fontWeight: 900 }}>{result.health_score}</div>
+                                        </div>
+                                    </div>
+
+                                    {/* Detailed Table */}
+                                    <div className="table-wrap" style={{ borderRadius: 16, border: '1px solid var(--border)', overflow: 'hidden' }}>
+                                        <table style={{ margin: 0 }}>
+                                            <thead style={{ background: 'var(--surface-muted)' }}>
+                                                <tr>
+                                                    <th style={{ fontSize: '0.7rem' }}>PARAMETER</th>
+                                                    <th style={{ fontSize: '0.7rem', textAlign: 'center' }}>PREV</th>
+                                                    <th style={{ fontSize: '0.7rem', textAlign: 'center' }}>CURR</th>
+                                                    <th style={{ fontSize: '0.7rem', textAlign: 'right' }}>TREND</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {trendData.comparison?.map((item) => {
+                                                    const currentTheme = getTheme(item.status);
+                                                    return (
+                                                        <tr key={item.name}>
+                                                            <td>
+                                                                <div style={{ fontWeight: 600, fontSize: '0.9rem' }}>{item.name}</div>
+                                                                <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>{item.unit}</div>
+                                                            </td>
+                                                            <td style={{ textAlign: 'center', color: 'var(--text-muted)' }}>{item.previous}</td>
+                                                            <td style={{ textAlign: 'center', color: currentTheme.color, fontWeight: 800 }}>{item.current}</td>
+                                                            <td style={{ textAlign: 'right' }}>
+                                                                {item.trend === 'up' && <TrendingUp size={16} color={item.impact === 'improved' ? '#10b981' : item.impact === 'worsened' ? '#ef4444' : '#94a3b8'} style={{ opacity: item.impact === 'stable' ? 0.3 : 1 }} />}
+                                                                {item.trend === 'down' && <TrendingDown size={16} color={item.impact === 'improved' ? '#10b981' : item.impact === 'worsened' ? '#ef4444' : '#94a3b8'} style={{ opacity: item.impact === 'stable' ? 0.3 : 1 }} />}
+                                                                {item.trend === 'stable' && <div style={{ width: 16, height: 16, borderRadius: '50%', background: 'var(--text-muted)', opacity: 0.15, margin: '0 0 0 auto' }} />}
+                                                            </td>
+                                                        </tr>
+                                                    );
+                                                })}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                    
+                                    <p style={{ margin: 0, fontSize: '0.75rem', color: 'var(--text-muted)', fontStyle: 'italic', textAlign: 'center' }}>
+                                        * Calculated based on reports from {trendData.date} and today.
+                                    </p>
+                                </div>
+                            )}
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
         </div>
     );
 }

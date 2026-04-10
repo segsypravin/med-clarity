@@ -27,7 +27,8 @@ router.post('/', async (req, res) => {
         formData.append('file', fs.createReadStream(filePath));
         formData.append('lang', lang);
 
-        const response = await axios.post('http://127.0.0.1:8000/analyze_report', formData, {
+        const SCAN_URL = process.env.SCAN_SERVICE_URL || 'http://127.0.0.1:8000';
+        const response = await axios.post(`${SCAN_URL}/analyze_report`, formData, {
             headers: formData.getHeaders()
         });
 
@@ -53,7 +54,8 @@ router.post('/translate', async (req, res) => {
     const { data, lang } = req.body;
 
     try {
-        const response = await axios.post('http://127.0.0.1:8000/translate_result', {
+        const SCAN_URL = process.env.SCAN_SERVICE_URL || 'http://127.0.0.1:8000';
+        const response = await axios.post(`${SCAN_URL}/translate_result`, {
             data,
             lang
         });
@@ -72,7 +74,8 @@ router.post('/chat', async (req, res) => {
     const { report_data, query, history, lang } = req.body;
 
     try {
-        const response = await axios.post('http://127.0.0.1:8000/chat', {
+        const SCAN_URL = process.env.SCAN_SERVICE_URL || 'http://127.0.0.1:8000';
+        const response = await axios.post(`${SCAN_URL}/chat`, {
             report_data,
             query,
             history,
