@@ -1,7 +1,9 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Upload, FileSearch, CheckCircle2, AlertCircle, Loader2, Activity, Stethoscope, Image as ImageIcon } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Upload, FileSearch, CheckCircle2, AlertCircle, Loader2, Activity, Stethoscope, Image as ImageIcon, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
+import { AiProcessingStepper } from './ui/AiProcessingStepper';
 import { auth } from '../firebase';
 
 export default function ScanUpload() {
@@ -12,6 +14,7 @@ export default function ScanUpload() {
     const [loading, setLoading] = useState(false);
     const [result, setResult] = useState(null);
     const [error, setError] = useState(null);
+    const [currentCard, setCurrentCard] = useState(0);
 
     // Cleanup object URL
     useEffect(() => {
@@ -241,6 +244,12 @@ export default function ScanUpload() {
                         />
                     </div>
 
+                    {loading && (
+                        <div className="processing-state animate-fade-up" style={{ marginTop: '1rem' }}>
+                            <AiProcessingStepper />
+                        </div>
+                    )}
+
                     <button 
                         className="btn btn-primary" 
                         style={{ width: '100%', padding: '0.9rem', marginTop: '1.25rem', fontSize: '1.05rem', fontWeight: 600, border: 'none', borderRadius: '8px' }}
@@ -269,7 +278,7 @@ export default function ScanUpload() {
                     )}
                 </div>
 
-                {/* ── RIGHT COLUMN: RESULT ── */}
+                {/* ── RIGHT COLUMN: RESULT (Now Carousel) ── */}
                 <div className="card card-p-lg" style={{ 
                     background: result ? 'var(--surface)' : 'var(--background)', 
                     display: 'flex', flexDirection: 'column', 
@@ -277,7 +286,9 @@ export default function ScanUpload() {
                     alignItems: result ? 'stretch' : 'center', 
                     border: result ? '1px solid var(--border)' : '1px dashed var(--border)',
                     boxShadow: result ? 'var(--shadow)' : 'none',
-                    minHeight: '400px'
+                    minHeight: '440px',
+                    position: 'relative',
+                    overflow: 'hidden'
                 }}>
                     {!result && !loading ? (
                          <div style={{ textAlign: 'center', color: 'var(--text-muted)' }}>
@@ -299,69 +310,215 @@ export default function ScanUpload() {
                         </div>
                     ) : result ? (
                         <div className="animate-fade-up" style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.5rem', paddingBottom: '1rem', borderBottom: '1px solid var(--border)' }}>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                                    <div style={{ background: 'var(--success-bg)', padding: '0.5rem', borderRadius: '50%' }}>
-                                        <CheckCircle2 color="var(--success)" size={24} />
-                                    </div>
-                                    <h3 style={{ fontSize: '1.25rem', fontWeight: '600', color: 'var(--text)', margin: 0 }}>{t("scan.analysis_complete")}</h3>
+                            {/* Header & Navigation */}
+                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.25rem', paddingBottom: '0.75rem', borderBottom: '1px solid var(--border)' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                    <div style={{ 
+                                        width: 10, height: 10, borderRadius: '50%', 
+                                        backgroundColor: resultExtras.riskLevel === 'Low' ? '#10b981' : resultExtras.riskLevel === 'High' ? '#ef4444' : '#f59e0b',
+                                        boxShadow: resultExtras.riskLevel === 'Low' ? '0 0 10px #10b981' : resultExtras.riskLevel === 'High' ? '0 0 10px #ef4444' : '0 0 10px #f59e0b'
+                                    }} />
+                                    <span style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                                        {t("scan.analysis_complete")}
+                                    </span>
                                 </div>
-                                <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>{t("scan.ai_computed")}</span>
-                            </div>
-                            
-                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1.5rem' }}>
-                                <div className="card-p" style={{ backgroundColor: 'var(--background)', border: '1px solid var(--border)', padding: '1.5rem', borderRadius: 'var(--radius-sm)' }}>
-                                    <p style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.9rem', color: 'var(--text-muted)', marginBottom: '0.5rem', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                                        <Activity size={16} color="var(--primary)" /> {t("scan.prediction")}
-                                    </p>
-                                    <p style={{ fontSize: '1.35rem', fontWeight: '700', color: 'var(--text)' }}>
-                                        {result.prediction ? result.prediction.charAt(0).toUpperCase() + result.prediction.slice(1) : t("scan.unknown")}
-                                    </p>
-                                </div>
-                                <div className="card-p" style={{ backgroundColor: 'var(--background)', border: '1px solid var(--border)', padding: '1.5rem', borderRadius: 'var(--radius-sm)' }}>
-                                    <p style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.9rem', color: 'var(--text-muted)', marginBottom: '0.6rem', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                                        <FileSearch size={16} color="var(--primary)" /> {t("scan.risk")}
-                                    </p>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
-                                        <span className={`badge ${resultExtras.riskClass}`} style={{ fontSize: '0.85rem', padding: '0.3rem 0.6rem' }}>
-                                            {t(`common.${resultExtras.riskLevel === "Low" ? "normal" : resultExtras.riskLevel === "High" ? "high_risk" : "moderate"}`)}
-                                        </span>
-                                        <span style={{ fontSize: '1.35rem', fontWeight: '700', color: 'var(--text)' }}>
-                                            {result.confidence ? (result.confidence * 100).toFixed(1) : 0}%
-                                        </span>
-                                    </div>
+                                <div style={{ display: 'flex', gap: '0.5rem' }}>
+                                    <button 
+                                        onClick={() => setCurrentCard(c => Math.max(0, c - 1))}
+                                        disabled={currentCard === 0}
+                                        style={{ background: 'none', border: 'none', cursor: currentCard === 0 ? 'default' : 'pointer', opacity: currentCard === 0 ? 0.3 : 1, padding: 4 }}
+                                    >
+                                        <ChevronLeft size={20} />
+                                    </button>
+                                    <button 
+                                        onClick={() => setCurrentCard(c => Math.min(2, c + 1))}
+                                        disabled={currentCard === 2}
+                                        style={{ background: 'none', border: 'none', cursor: currentCard === 2 ? 'default' : 'pointer', opacity: currentCard === 2 ? 0.3 : 1, padding: 4 }}
+                                    >
+                                        <ChevronRight size={20} />
+                                    </button>
                                 </div>
                             </div>
-                            
-                            <div style={{ flexGrow: 1 }}></div>
 
-                            <div 
-                                onClick={() => navigate(`/doctors?filter=${encodeURIComponent(resultExtras.doctor)}`)}
-                                style={{ 
-                                    display: 'flex', alignItems: 'center', gap: '1rem', padding: '1.25rem', 
-                                    backgroundColor: 'var(--primary-light)', borderRadius: 'var(--radius)', 
-                                    border: '1px solid var(--border-red)', cursor: 'pointer',
-                                    transition: 'all 0.2s ease', WebkitTapHighlightColor: 'transparent'
-                                }}
-                                onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = 'var(--shadow-md)'; }}
-                                onMouseLeave={e => { e.currentTarget.style.transform = 'none'; e.currentTarget.style.boxShadow = 'none'; }}
-                            >
-                                <div style={{ width: 48, height: 48, borderRadius: '50%', background: 'var(--primary)', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                                    <Stethoscope size={24} />
-                                </div>
-                                <div style={{ flex: 1 }}>
-                                    <p style={{ fontSize: '0.85rem', color: 'var(--primary)', fontWeight: 600, marginBottom: '0.2rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{t("scan.recommended_specialist")}</p>
-                                    <p style={{ fontSize: '1.15rem', fontWeight: 700, color: 'var(--text)' }}>
-                                        {resultExtras.doctor && t(`doctors.${resultExtras.doctor.toLowerCase().replace(' ', '_')}`) !== `doctors.${resultExtras.doctor.toLowerCase().replace(' ', '_')}` ? t(`doctors.${resultExtras.doctor.toLowerCase().replace(' ', '_')}`) : resultExtras.doctor}
-                                    </p>
-                                </div>
-                                <div style={{ color: 'var(--primary)', fontWeight: 600, fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '0.2rem' }}>
-                                    {t("scan.find")} <span style={{ fontSize: '1.2rem' }}>&rarr;</span>
-                                </div>
+                            {/* Carousel Content */}
+                            <div style={{ flex: 1, position: 'relative' }}>
+                                <AnimatePresence mode="wait">
+                                    {currentCard === 0 && (
+                                        <motion.div 
+                                            key="card-detection"
+                                            initial={{ opacity: 0, scale: 0.95 }}
+                                            animate={{ opacity: 1, scale: 1 }}
+                                            exit={{ opacity: 0, scale: 1.05 }}
+                                            transition={{ duration: 0.4 }}
+                                            style={{ height: '100%', display: 'flex', flexDirection: 'column' }}
+                                        >
+                                            <div style={{ 
+                                                flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', 
+                                                padding: '2rem', borderRadius: '24px', 
+                                                background: resultExtras.riskLevel === 'Low' 
+                                                    ? 'linear-gradient(135deg, #064e3b 0%, #031a12 100%)' 
+                                                    : resultExtras.riskLevel === 'High' 
+                                                        ? 'linear-gradient(135deg, #450a0a 0%, #1a0505 100%)'
+                                                        : 'linear-gradient(135deg, #451a03 0%, #1a0802 100%)',
+                                                border: `1.5px solid ${resultExtras.riskLevel === 'Low' ? '#10b98140' : resultExtras.riskLevel === 'High' ? '#ef444440' : '#f59e0b40'}`,
+                                                position: 'relative', overflow: 'hidden', boxShadow: '0 20px 40px rgba(0,0,0,0.4)'
+                                            }}>
+                                                {/* Holographic sweep */}
+                                                <motion.div 
+                                                    animate={{ top: ['-20%', '120%'] }}
+                                                    transition={{ duration: 3, repeat: Infinity, ease: 'linear' }}
+                                                    style={{ 
+                                                        position: 'absolute', left: 0, right: 0, height: '40px', 
+                                                        background: 'linear-gradient(to bottom, transparent, rgba(255,255,255,0.05), transparent)',
+                                                        zIndex: 0, pointerEvents: 'none'
+                                                    }}
+                                                />
+
+                                                {/* Confidence Gauge (SVG) */}
+                                                <div style={{ position: 'relative', width: 140, height: 140, marginBottom: '1.5rem', zIndex: 1 }}>
+                                                    <svg width="140" height="140" viewBox="0 0 100 100" style={{ transform: 'rotate(-90deg)' }}>
+                                                        <circle cx="50" cy="50" r="44" fill="none" stroke="rgba(255,255,255,0.05)" strokeWidth="8" />
+                                                        <motion.circle 
+                                                            cx="50" cy="50" r="44" fill="none" 
+                                                            stroke={resultExtras.riskLevel === 'Low' ? '#10b981' : resultExtras.riskLevel === 'High' ? '#ef4444' : '#f59e0b'} 
+                                                            strokeWidth="8"
+                                                            strokeDasharray={2 * Math.PI * 44}
+                                                            initial={{ strokeDashoffset: 2 * Math.PI * 44 }}
+                                                            animate={{ strokeDashoffset: (2 * Math.PI * 44) * (1 - result.confidence) }}
+                                                            transition={{ duration: 1.8, ease: 'easeOut', delay: 0.2 }}
+                                                            strokeLinecap="round"
+                                                            style={{ filter: `drop-shadow(0 0 8px ${resultExtras.riskLevel === 'Low' ? '#10b981' : resultExtras.riskLevel === 'High' ? '#ef4444' : '#f59e0b'})` }}
+                                                        />
+                                                    </svg>
+                                                    <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+                                                        <span style={{ fontSize: '1.8rem', fontWeight: 900, color: 'white', letterSpacing: '-0.02em' }}>
+                                                            {(result.confidence * 100).toFixed(0)}%
+                                                        </span>
+                                                        <span style={{ fontSize: '0.6rem', fontWeight: 700, color: 'rgba(255,255,255,0.4)', letterSpacing: '0.1em' }}>AI CONFID</span>
+                                                    </div>
+                                                </div>
+
+                                                <h2 style={{ fontSize: '1.6rem', fontWeight: 900, textAlign: 'center', color: 'white', margin: '0 0 0.5rem', letterSpacing: '-0.02em', zIndex: 1 }}>
+                                                    {result.prediction ? result.prediction.charAt(0).toUpperCase() + result.prediction.slice(1) : t("scan.unknown")}
+                                                </h2>
+                                                
+                                                <div style={{ zIndex: 1, display: 'flex', alignItems: 'center', gap: 6, background: 'rgba(255,255,255,0.1)', padding: '6px 14px', borderRadius: '30px', border: '1px solid rgba(255,255,255,0.1)' }}>
+                                                    <div style={{ width: 8, height: 8, borderRadius: '50%', backgroundColor: resultExtras.riskLevel === 'Low' ? '#10b981' : '#ef4444' }}></div>
+                                                    <span style={{ fontSize: '0.75rem', fontWeight: 700, color: 'white', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                                                        {t(`common.${resultExtras.riskLevel === "Low" ? "normal" : resultExtras.riskLevel === "High" ? "high_risk" : "moderate"}`)} {resultExtras.riskLevel === "Low" ? "Result" : resultExtras.riskLevel === "High" ? "Detected" : "Risk Detected"}
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        </motion.div>
+                                    )}
+
+                                    {currentCard === 1 && (
+                                        <motion.div 
+                                            key="card-insights"
+                                            initial={{ opacity: 0, scale: 0.95 }}
+                                            animate={{ opacity: 1, scale: 1 }}
+                                            exit={{ opacity: 0, scale: 1.05 }}
+                                            transition={{ duration: 0.4 }}
+                                            style={{ height: '100%', display: 'flex', flexDirection: 'column' }}
+                                        >
+                                            <div style={{ 
+                                                flex: 1, padding: '2.25rem', borderRadius: '24px', 
+                                                background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border)',
+                                                position: 'relative', backdropFilter: 'blur(10px)'
+                                            }}>
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1.5rem' }}>
+                                                    <div style={{ width: 42, height: 42, borderRadius: '12px', background: 'var(--primary)', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 8px 16px rgba(192,21,42,0.2)' }}>
+                                                        <Activity size={22} />
+                                                    </div>
+                                                    <div>
+                                                        <h3 style={{ fontSize: '1.2rem', fontWeight: 800, margin: 0, letterSpacing: '-0.01em' }}>Clinical Summary</h3>
+                                                        <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Deep Learning Engine v4.0</span>
+                                                    </div>
+                                                </div>
+                                                <p style={{ fontSize: '1rem', lineHeight: '1.8', color: 'var(--text)', marginBottom: '1.75rem', fontWeight: 500 }}>
+                                                    {resultExtras.riskLevel === "Low" 
+                                                        ? "The AI analysis model has flagged your image as 'Normal'. No significant radiographic findings were detected in the primary survey area."
+                                                        : "The AI analysis model has identified suspicious patterns that correlate with typical clinical markers for this condition. Further professional review is strongly recommended."}
+                                                </p>
+                                                <div style={{ 
+                                                    padding: '1.25rem', borderRadius: '16px', background: 'var(--primary-light)', 
+                                                    border: '1px solid var(--border-red)', position: 'relative'
+                                                }}>
+                                                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 }}>
+                                                        <CheckCircle2 size={16} color="var(--primary)" />
+                                                        <span style={{ fontSize: '0.75rem', fontWeight: 800, color: 'var(--primary)', textTransform: 'uppercase' }}>Expert Review Recommendation</span>
+                                                    </div>
+                                                    <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--text)', lineHeight: 1.5 }}>
+                                                        A {resultExtras.doctor} should correlate these findings with your clinical history.
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        </motion.div>
+                                    )}
+
+                                    {currentCard === 2 && (
+                                        <motion.div 
+                                            key="card-action"
+                                            initial={{ opacity: 0, scale: 0.95 }}
+                                            animate={{ opacity: 1, scale: 1 }}
+                                            exit={{ opacity: 0, scale: 1.05 }}
+                                            transition={{ duration: 0.4 }}
+                                            style={{ height: '100%', display: 'flex', flexDirection: 'column' }}
+                                        >
+                                            <div 
+                                                onClick={() => navigate(`/doctors?filter=${encodeURIComponent(resultExtras.doctor)}`)}
+                                                style={{ 
+                                                    flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+                                                    padding: '2.5rem', borderRadius: '24px', 
+                                                    background: 'linear-gradient(135deg, white 0%, #f1f5f9 100%)', 
+                                                    border: '2px solid var(--primary)', cursor: 'pointer',
+                                                    textAlign: 'center', transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)', 
+                                                    boxShadow: '0 25px 50px -12px rgba(192,21,42,0.25)'
+                                                }}
+                                                onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-8px)'; e.currentTarget.style.borderColor = 'var(--secondary)'; }}
+                                                onMouseLeave={e => { e.currentTarget.style.transform = 'none'; e.currentTarget.style.borderColor = 'var(--primary)'; }}
+                                            >
+                                                <div style={{ 
+                                                    width: 80, height: 80, borderRadius: '24px', background: 'var(--primary)', 
+                                                    color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '1.75rem',
+                                                    boxShadow: '0 12px 24px rgba(192,21,42,0.3)', transform: 'rotate(-5deg)'
+                                                }}>
+                                                    <Stethoscope size={40} />
+                                                </div>
+                                                <p style={{ fontSize: '0.85rem', color: 'var(--primary)', fontWeight: 800, textTransform: 'uppercase', marginBottom: '0.5rem', letterSpacing: '0.12em' }}>
+                                                    Recommended Specialist
+                                                </p>
+                                                <h3 style={{ fontSize: '1.8rem', fontWeight: 900, color: '#0f172a', marginBottom: '1.5rem', letterSpacing: '-0.02em' }}>
+                                                    {resultExtras.doctor && t(`doctors.${resultExtras.doctor.toLowerCase().replace(' ', '_')}`) !== `doctors.${resultExtras.doctor.toLowerCase().replace(' ', '_')}` ? t(`doctors.${resultExtras.doctor.toLowerCase().replace(' ', '_')}`) : resultExtras.doctor}
+                                                </h3>
+                                                <div className="btn btn-primary" style={{ padding: '0.8rem 2.5rem', borderRadius: '50px', fontSize: '1rem', fontWeight: 700, gap: '0.75rem', boxShadow: '0 8px 20px var(--primary-glow)' }}>
+                                                    Book Consultation <ChevronRight size={20} />
+                                                </div>
+                                            </div>
+                                        </motion.div>
+                                    )}
+                                </AnimatePresence>
+                            </div>
+
+                            {/* Carousel Indicators (Dots) */}
+                            <div style={{ display: 'flex', justifyContent: 'center', gap: '0.6rem', marginTop: '1.25rem' }}>
+                                {[0, 1, 2].map((idx) => (
+                                    <button 
+                                        key={idx}
+                                        onClick={() => setCurrentCard(idx)}
+                                        style={{ 
+                                            padding: 0, border: 'none', width: idx === currentCard ? 24 : 10, height: 10, 
+                                            borderRadius: 5, background: idx === currentCard ? 'var(--primary)' : 'var(--border)',
+                                            transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)', cursor: 'pointer'
+                                        }}
+                                        title={`Step ${idx + 1}`}
+                                    />
+                                ))}
                             </div>
                         </div>
                     ) : null}
                 </div>
+
             </div>
             </div>
         </>

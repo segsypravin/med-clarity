@@ -1,5 +1,8 @@
 import { useNavigate } from 'react-router-dom';
 import { useLanguage } from '../context/LanguageContext';
+import { Zap as LucideZap, Play as LucidePlay, Shield, Activity, CheckCircle, FileText, Heart } from 'lucide-react';
+// eslint-disable-next-line no-unused-vars
+import { motion } from 'framer-motion';
 
 
 
@@ -58,9 +61,23 @@ export default function Landing() {
 
             {/* ── HERO ── */}
             <section className="hero-section">
-                <div className="hero-bg-orb hero-orb-1" />
-                <div className="hero-bg-orb hero-orb-2" />
-                <div className="hero-content">
+                <motion.div 
+                    animate={{ x: [0, 20, -20, 0], y: [0, -20, 20, 0] }}
+                    transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
+                    className="hero-bg-orb hero-orb-1" 
+                />
+                <motion.div 
+                    animate={{ x: [0, -30, 30, 0], y: [0, 30, -30, 0] }}
+                    transition={{ duration: 25, repeat: Infinity, ease: "linear" }}
+                    className="hero-bg-orb hero-orb-2" 
+                />
+                
+                <motion.div 
+                    initial={{ opacity: 0, x: -30 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ duration: 0.8 }}
+                    className="hero-content"
+                >
                     <div className="hero-badge">
                         <span className="hero-badge-dot" />
                         {t('landing.hero_badge')}
@@ -72,16 +89,24 @@ export default function Landing() {
                         {t('landing.hero_subtitle')}
                     </p>
                     <div className="hero-cta">
-                        <button className="btn btn-primary btn-lg hero-cta-primary" onClick={() => navigate('/login?mode=signup')}>
-                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                                <polyline points="17 8 12 3 7 8" />
-                                <line x1="12" y1="3" x2="12" y2="15" />
-                            </svg>
+                        <button className="btn btn-premium btn-lg hero-cta-primary" onClick={() => navigate('/login?mode=signup')}>
+                            <LucideZap size={18} fill="white" />
                             {t('landing.get_started_free')}
                         </button>
-                        <button className="btn btn-outline btn-lg" onClick={() => navigate('/login')}>
-                            {t('login.sign_in_to_dash')}
+                        <button className="btn btn-outline btn-lg" onClick={() => {
+                            // Quick Demo Logic: Navigate to results with mock data
+                            navigate('/results', { state: { result: {
+                                summary: "This is a sample medical analysis for demonstration. The AI has detected normal hemoglobin levels but suggests a slight increase in Vitamin D intake.",
+                                health_score: 85,
+                                overall_status: "Healthy",
+                                tests: [
+                                    { test: "Hemoglobin", value: "14.2", unit: "g/dL", status: "Normal", simple_explanation: "Hemoglobin is the protein in red blood cells that carries oxygen.", remark: "Well within optimal range." },
+                                    { test: "Vitamin D", value: "22", unit: "ng/mL", status: "Low", simple_explanation: "Vitamin D helps your body absorb calcium for strong bones.", remark: "Below recommended level of 30." }
+                                ]
+                            }}});
+                        }}>
+                            <LucidePlay size={18} />
+                            Quick Demo
                         </button>
                     </div>
                     <div className="hero-stats">
@@ -94,33 +119,95 @@ export default function Landing() {
                             <span className="hero-stat-label">{t('landing.stats_reports')}</span>
                         </div>
                     </div>
-                </div>
-                {/* Floating report card mockup */}
-                <div className="hero-mockup">
-                    <div className="mockup-card">
-                        <div className="mockup-header">
-                            <div className="mockup-icon">📄</div>
+                </motion.div>
+
+                {/* Floating report card mockup (Refined for Theme Suitability) */}
+                <motion.div 
+                    initial={{ opacity: 0, scale: 0.8, rotate: 5 }}
+                    animate={{ opacity: 1, scale: 1, rotate: 0 }}
+                    transition={{ duration: 1, delay: 0.2, type: 'spring' }}
+                    className="hero-mockup"
+                    style={{ position: 'relative' }}
+                >
+                    {/* Floating Badges */}
+                    <div className="mockup-floating-badge" style={{ top: '-30px', right: '-10px', color: 'var(--primary)', border: '1px solid var(--border-red)', background: 'var(--surface)', boxShadow: 'var(--shadow)', fontWeight: 700 }}>
+                        <Shield size={14} /> <span style={{ color: 'var(--text)' }}>Strict Privacy</span>
+                    </div>
+                    <div className="mockup-floating-badge" style={{ bottom: '20px', left: '-50px', animationDelay: '1s', color: 'var(--primary)', border: '1px solid var(--border-red)', background: 'var(--surface)', boxShadow: 'var(--shadow)', fontWeight: 700 }}>
+                        <CheckCircle size={14} /> <span style={{ color: 'var(--text)' }}>AI-Grade 99%</span>
+                    </div>
+
+                    <div className="mockup-card-theme" style={{ width: '380px', padding: '1.75rem', border: '1px solid var(--border-red)' }}>
+                        <div className="mockup-scan-line" style={{ background: 'linear-gradient(180deg, transparent, var(--primary-glow), transparent)' }} />
+                        
+                        <div className="mockup-header" style={{ marginBottom: '1.75rem' }}>
+                            <div className="mockup-icon" style={{ background: 'var(--primary)', width: '42px', height: '42px', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 12px var(--primary-glow)' }}>
+                                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                    <path d="M22 12h-4l-3 9L9 3l-3 9H2" />
+                                </svg>
+                            </div>
                             <div>
-                                <div className="mockup-title">Sample Medical Report</div>
-                                <div className="mockup-sub">Ready for analysis...</div>
+                                <div className="mockup-title" style={{ 
+                                    fontWeight: 900, 
+                                    fontSize: '1.25rem', 
+                                    letterSpacing: '-0.03em',
+                                    background: 'linear-gradient(135deg, var(--primary), var(--secondary))',
+                                    WebkitBackgroundClip: 'text',
+                                    WebkitTextFillColor: 'transparent'
+                                }}>Health Summary</div>
+                                <div className="mockup-sub" style={{ display: 'flex', alignItems: 'center', gap: '4px', color: 'var(--primary)', fontSize: '0.8rem', fontWeight: 600 }}>
+                                    <Activity size={12} className="pulse-audio" /> Scanning Live...
+                                </div>
                             </div>
                         </div>
-                        <div className="mockup-divider" />
-                        <div className="mockup-row"><span className="mockup-key" style={{ width: '40%', height: '12px', background: 'var(--surface)', borderRadius: '4px' }}></span><span className="mockup-val" style={{ width: '20%', height: '12px', background: 'var(--surface)', borderRadius: '4px' }}></span></div>
-                        <div className="mockup-row"><span className="mockup-key" style={{ width: '60%', height: '12px', background: 'var(--surface)', borderRadius: '4px' }}></span><span className="mockup-val" style={{ width: '30%', height: '12px', background: 'var(--surface)', borderRadius: '4px' }}></span></div>
-                        <div className="mockup-row"><span className="mockup-key" style={{ width: '50%', height: '12px', background: 'var(--surface)', borderRadius: '4px' }}></span><span className="mockup-val" style={{ width: '25%', height: '12px', background: 'var(--surface)', borderRadius: '4px' }}></span></div>
-                        <div className="mockup-row"><span className="mockup-key" style={{ width: '30%', height: '12px', background: 'var(--surface)', borderRadius: '4px' }}></span><span className="mockup-val" style={{ width: '15%', height: '12px', background: 'var(--surface)', borderRadius: '4px' }}></span></div>
-                        <div className="mockup-divider" />
-                        <div className="mockup-summary">
-                            <span className="mockup-summary-label">AI Summary</span>
-                            <p className="mockup-summary-text">Upload a report to see an easy-to-understand, personalized AI summary right here.</p>
+
+                        <div style={{ marginBottom: '1.75rem' }}>
+                            {[
+                                { label: 'Hemoglobin', val: '14.2 g/dL', color: 'var(--primary)', width: '75%' },
+                                { label: 'Glucose', val: '92 mg/dL', color: 'var(--secondary)', width: '45%' },
+                                { label: 'Leukocytes', val: '6.4 k/µL', color: '#7f1d1d', width: '60%' }
+                            ].map((row, i) => (
+                                <div key={row.label} className="mockup-data-row" style={{ marginBottom: '1.25rem' }}>
+                                    <div style={{ flex: 1 }}>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.78rem', fontWeight: 800, marginBottom: '6px' }}>
+                                            <span style={{ color: 'var(--text-light)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>{row.label}</span>
+                                            <span style={{ color: 'var(--text)' }}>{row.val}</span>
+                                        </div>
+                                        <div className="mockup-progress" style={{ background: 'var(--bg)', height: '10px', borderRadius: '5px' }}>
+                                            <motion.div 
+                                                initial={{ width: 0 }}
+                                                animate={{ width: row.width }}
+                                                transition={{ duration: 2, delay: 0.5 + (i * 0.2) }}
+                                                className="mockup-progress-bar mockup-shimmer" 
+                                                style={{ background: row.color, borderRadius: '5px' }} 
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+
+                        <div className="mockup-summary" style={{ background: 'var(--primary-light)', padding: '1.25rem', borderRadius: 'var(--radius)', border: '1px solid var(--border-red)', boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.02)' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+                                <Heart size={14} color="var(--primary)" fill="var(--primary)" />
+                                <span className="mockup-summary-label" style={{ fontSize: '0.85rem', fontWeight: 900, color: 'var(--primary)', letterSpacing: '0.02em', textTransform: 'uppercase' }}>AI Insight</span>
+                            </div>
+                            <p className="mockup-summary-text" style={{ fontSize: '0.88rem', lineHeight: 1.6, color: 'var(--text)', margin: 0, fontWeight: 500 }}>
+                                Your vital markers are in optimal range. Maintain current protein intake for better energy levels.
+                            </p>
                         </div>
                     </div>
-                </div>
+                </motion.div>
             </section>
 
             {/* ── FEATURES ── */}
-            <section id="features" className="landing-section">
+            <motion.section 
+                initial={{ opacity: 0 }}
+                whileInView={{ opacity: 1 }}
+                viewport={{ once: true }}
+                id="features" 
+                className="landing-section"
+            >
                 <div className="landing-section-inner">
                     <div className="section-header">
                         <span className="section-eyebrow">{t('landing.why_med_clarity')}</span>
@@ -128,16 +215,23 @@ export default function Landing() {
                         <p className="section-desc">{t('landing.powered_by_ai')}</p>
                     </div>
                     <div className="features-grid">
-                        {featuresWithIcons.map(f => (
-                            <div key={f.title} className="feature-card">
+                        {featuresWithIcons.map((f, i) => (
+                            <motion.div 
+                                key={f.title}
+                                initial={{ opacity: 0, y: 20 }}
+                                whileInView={{ opacity: 1, y: 0 }}
+                                transition={{ delay: i * 0.1 }}
+                                viewport={{ once: true }}
+                                className="feature-card glass"
+                            >
                                 <div className="feature-icon">{f.icon}</div>
                                 <h3 className="feature-title">{f.title}</h3>
                                 <p className="feature-desc">{f.desc}</p>
-                            </div>
+                            </motion.div>
                         ))}
                     </div>
                 </div>
-            </section>
+            </motion.section>
 
             {/* ── HOW IT WORKS ── */}
             <section id="how-it-works" className="landing-section landing-section-alt">

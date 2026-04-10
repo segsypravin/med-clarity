@@ -65,8 +65,20 @@ export default function UploadArea({ onSuccess }) {
                 });
 
                 const analyzeData = await analyzeRes.json();
+                console.log("🔍 RAW analyzeData:", JSON.stringify(analyzeData, null, 2));
+
+                // Treat explicit {success: false} as an error even if HTTP was 200
+                if (!analyzeRes.ok || analyzeData.success === false) {
+                    setStatus('error');
+                    setMessage(analyzeData.error || analyzeData.message || t('common.error'));
+                    return;
+                }
 
                 if (analyzeRes.ok) {
+                    // Unwrap the result from the API wrapper { status: "success", result: {...} }
+                    const geminiResult = analyzeData.result || analyzeData;
+                    console.log("🔍 geminiResult:", JSON.stringify(geminiResult, null, 2));
+
                     // 🎉 Sync with History API (Phase 1 In-Memory)
                     try {
                         await fetch('http://localhost:5000/api/history', {
@@ -77,10 +89,10 @@ export default function UploadArea({ onSuccess }) {
                                 filename: data.file.filename,
                                 date: new Date().toLocaleDateString(),
                                 type: 'Blood Report',
-                                status: (analyzeData.overall_status || 'Normal').toLowerCase(),
-                                score: analyzeData.health_score || 75,
+                                status: (geminiResult.overall_status || 'Normal').toLowerCase(),
+                                score: geminiResult.health_score || 75,
                                 size: (data.file.size / 1024).toFixed(1) + ' KB',
-                                result: analyzeData // Full AI output for Results page viewing later
+                                result: geminiResult // Full AI output for Results page viewing later
                             })
                         });
                     } catch (historyErr) {
@@ -89,8 +101,8 @@ export default function UploadArea({ onSuccess }) {
 
                     setStatus('success');
                     setMessage(t('common.success'));
-                    onSuccess?.({ ...data, analyze: analyzeData });
-                    navigate('/results', { state: { result: analyzeData, lang: language } });
+                    onSuccess?.({ ...data, analyze: geminiResult });
+                    navigate('/results', { state: { result: geminiResult, lang: language } });
                 } else {
                     setStatus('error');
                     setMessage(analyzeData.message || t('common.error'));

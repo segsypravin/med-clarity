@@ -62,11 +62,13 @@ export function StatCard({ icon, label, value, sub, colorClass = 'red' }) {
     );
 }
 
+// eslint-disable-next-line no-unused-vars
+import { motion } from 'framer-motion';
+
 // HealthScore ring component  
 export function HealthScore({ score = 0, size = 140 }) {
     const radius = (size - 16) / 2;
     const circ = 2 * Math.PI * radius;
-    const filled = (score / 100) * circ;
     const color = score >= 75 ? '#059669' : score >= 50 ? '#d97706' : '#c0152a';
 
     return (
@@ -74,17 +76,33 @@ export function HealthScore({ score = 0, size = 140 }) {
             <div className="score-ring" style={{ width: size, height: size }}>
                 <svg width={size} height={size} style={{ transform: 'rotate(-90deg)' }}>
                     <circle cx={size / 2} cy={size / 2} r={radius}
-                        fill="none" stroke="#f3f4f6" strokeWidth="12" />
-                    <circle cx={size / 2} cy={size / 2} r={radius}
+                        fill="none" stroke="var(--border)" strokeWidth="12" />
+                    <motion.circle 
+                        cx={size / 2} cy={size / 2} r={radius}
                         fill="none" stroke={color} strokeWidth="12"
+                        initial={{ strokeDashoffset: circ }}
+                        animate={{ 
+                            strokeDashoffset: circ - (score / 100) * circ,
+                            scale: score >= 80 ? [1, 1.05, 1] : 1
+                        }}
+                        transition={{ 
+                            strokeDashoffset: { duration: 1.5, ease: "easeOut" },
+                            scale: { duration: 2, repeat: Infinity, ease: "easeInOut" }
+                        }}
                         strokeDasharray={circ}
-                        strokeDashoffset={circ - filled}
                         strokeLinecap="round"
-                        style={{ transition: 'stroke-dashoffset 0.8s ease' }}
                     />
                 </svg>
                 <div className="score-ring-label">
-                    <span className="score-ring-value" style={{ color }}>{score}</span>
+                    <motion.span 
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.5 }}
+                        className="score-ring-value" 
+                        style={{ color }}
+                    >
+                        {score}
+                    </motion.span>
                     <span className="score-ring-subtitle">/ 100</span>
                 </div>
             </div>

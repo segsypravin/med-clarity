@@ -47,7 +47,9 @@ router.post("/", upload.single("scan"), async (req, res) => {
         res.json({
             message: "Scan analyzed successfully",
             prediction: result.prediction,
-            confidence: result.confidence
+            confidence: result.confidence,
+            summary: result.summary || "",
+            recommendations: result.recommendations || [],
         });
 
     } catch (error) {

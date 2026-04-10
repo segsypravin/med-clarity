@@ -1,14 +1,16 @@
 import { NavLink, useNavigate } from 'react-router-dom';
 import {
     LayoutDashboard, Upload, ClipboardList, History,
-    Stethoscope, Settings, Info, Activity, LogOut, Globe
+    Stethoscope, Settings, Info, Activity, LogOut, Globe, User
 } from 'lucide-react';
 import { useLanguage } from '../../context/LanguageContext';
+import { useAuth } from '../../context/AuthContext';
 import { auth } from '../../firebase';
 import { signOut } from 'firebase/auth';
 
 export default function Sidebar() {
     const { language, setLanguage, t } = useLanguage();
+    const { currentUser } = useAuth();
     const navigate = useNavigate();
 
     const handleLogout = async () => {
@@ -39,6 +41,7 @@ export default function Sidebar() {
         },
         {
             label: t('common.account'), items: [
+                { to: '/profile', icon: User, label: t('common.profile') },
                 { to: '/settings', icon: Settings, label: t('common.settings') },
                 { to: '/about', icon: Info, label: t('common.about') },
             ]
@@ -93,7 +96,7 @@ export default function Sidebar() {
                 </select>
             </div>
 
-            {/* Navigation */}
+            {/* Navigation (Profile removed from top absolute) */}
             <nav className="sidebar-nav">
                 {navItems.map((section) => (
                     <div key={section.label}>
@@ -113,16 +116,57 @@ export default function Sidebar() {
                 ))}
             </nav>
 
-            {/* Bottom */}
-            <div className="sidebar-bottom">
-                <button 
-                    className="btn btn-ghost" 
-                    style={{ width: '100%', justifyContent: 'flex-start', gap: '0.75rem' }}
-                    onClick={handleLogout}
-                >
-                    <LogOut size={16} />
-                    <span style={{ fontSize: '0.875rem' }}>{t('common.sign_out')}</span>
-                </button>
+            {/* Bottom: Sign Out + Profile Swapped */}
+            <div className="sidebar-bottom" style={{ 
+                padding: '1.25rem 0.75rem',
+                borderTop: '1px solid var(--border)',
+                marginTop: 'auto'
+            }}>
+                <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.5rem',
+                    background: 'var(--primary-light)',
+                    padding: '0.5rem',
+                    borderRadius: '12px',
+                    border: '1px solid var(--border)'
+                }}>
+                    <button 
+                        className="btn btn-ghost" 
+                        style={{ 
+                            flex: 1, 
+                            justifyContent: 'center', 
+                            padding: '0.4rem',
+                            gap: '0.4rem',
+                            fontSize: '0.8rem',
+                            background: 'transparent',
+                            color: 'var(--primary)',
+                            fontWeight: 600
+                        }}
+                        onClick={handleLogout}
+                    >
+                        <LogOut size={14} />
+                        <span>{t('common.sign_out')}</span>
+                    </button>
+
+                    {/* Minimal Profile Circle (now on the right) */}
+                    <div 
+                        onClick={() => navigate('/profile')}
+                        style={{ 
+                            width: 34, height: 34, borderRadius: '50%', 
+                            background: 'linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%)',
+                            color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            fontWeight: '800', fontSize: '0.9rem', cursor: 'pointer', flexShrink: 0,
+                            border: '2px solid white', boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+                            transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)'
+                        }}
+                        onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.08)'}
+                        onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}
+                        title={currentUser?.displayName || t('common.profile')}
+                    >
+                        {currentUser?.displayName ? currentUser.displayName.charAt(0).toUpperCase() : (currentUser?.email ? currentUser.email.charAt(0).toUpperCase() : 'U')}
+                    </div>
+                </div>
             </div>
         </aside>
     );

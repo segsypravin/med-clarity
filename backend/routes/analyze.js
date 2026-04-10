@@ -68,4 +68,25 @@ router.post('/translate', async (req, res) => {
     }
 });
 
+router.post('/chat', async (req, res) => {
+    const { report_data, query, history, lang } = req.body;
+
+    try {
+        const response = await axios.post('http://127.0.0.1:8000/chat', {
+            report_data,
+            query,
+            history,
+            lang
+        });
+
+        res.json({
+            status: "success",
+            response: response.data.response
+        });
+    } catch (err) {
+        console.error('Chat Error:', err.message);
+        res.status(500).json({ success: false, message: 'Chat interaction failed.' });
+    }
+});
+
 module.exports = router;

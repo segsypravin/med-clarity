@@ -9,6 +9,7 @@ import Results from './pages/Results';
 import History from './pages/History';
 import Doctors from './pages/Doctors';
 import Settings from './pages/Settings';
+import Profile from './pages/Profile';
 import About from './pages/About';
 import ScanUpload from './components/ScanUpload';
 import './index.css';
@@ -31,6 +32,7 @@ export default function App() {
             <Route path="scan-upload" element={<ScanUpload />} />
             <Route path="history" element={<History />} />
             <Route path="doctors" element={<Doctors />} />
+            <Route path="profile" element={<Profile />} />
             <Route path="settings" element={<Settings />} />
             <Route path="about" element={<About />} />
           </Route>

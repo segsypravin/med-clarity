@@ -3,3 +3,8 @@ uvicorn
 python-multipart
 requests
 deep-translator
+google-cloud-vision
+google-cloud-storage
+google-genai
+google-cloud-translate
+python-dotenv

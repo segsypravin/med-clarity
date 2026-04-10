@@ -4,6 +4,12 @@ import shutil
 import os
 import uuid
 import sys
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
+print(f"[DEBUG] Loaded GEMINI_API_KEY: {os.environ.get('GEMINI_API_KEY', 'None')[:10]}...")
+print(f"[DEBUG] Loaded VISION_API_KEY: {os.environ.get('VISION_API_KEY', 'None')[:10]}...")
 
 # Ensure terminal/redirected output handles UTF-8 (for medical symbols like µ)
 if hasattr(sys.stdout, 'reconfigure'):
@@ -78,6 +84,20 @@ async def analyze_report_api(file: UploadFile = File(...), lang: str = Form("en"
             "success": False,
             "error": str(e)
         }
+
+@app.post("/chat")
+async def chat_api(payload: dict):
+    try:
+        from pipeline.gcp_gemini import chat_with_health_assistant
+        report_data = payload.get("report_data")
+        user_query = payload.get("query")
+        history = payload.get("history", [])
+        lang = payload.get("lang", "en")
+        
+        response = chat_with_health_assistant(report_data, user_query, history, lang)
+        return {"response": response}
+    except Exception as e:
+        return {"error": str(e)}
 
 @app.post("/translate_result")
 async def translate_result_api(payload: dict):

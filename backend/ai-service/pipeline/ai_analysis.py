@@ -95,11 +95,14 @@ def analyze_report(structured_tests_or_text, lang="en"):
 CRITICAL RULES:
 1. Do NOT calculate or guess the status. You MUST use the exact [STATUS] provided for each test above.
 2. If the Status is 'NORMAL', your reason MUST be exactly "Value is within normal limits." and your suggestion MUST be exactly "Maintain a healthy lifestyle." DO NOT invent diseases, conditions, or treatments for NORMAL tests.
-3. If the Status is 'HIGH' or 'LOW', provide a clear medical reason (physiological meaning, possible causes) and practical, actionable advice.
-4. remark: A concise 1-sentence version combining reason + suggestion.
-5. health_score: integer 0–100 (100 = perfectly healthy, deduct ~5 per abnormal test).
-6. overall_status: "Normal" if all tests normal, otherwise "Attention Required".
-7. summary: 2–3 personalized sentences about overall health based on the results.
+3. If the Status is 'HIGH' or 'LOW', provide:
+   - reason: Clear possible medical reasons / physiological causes.
+   - suggestion: Practical, actionable advice for improvement.
+4. simple_explanation: A very simple, non-medical explanation of what this test measures (e.g., "Hemoglobin is the protein in red blood cells that carries oxygen").
+5. remark: A concise 1-sentence version combining result message + brief suggestion.
+6. health_score: integer 0–100 (100 = perfectly healthy, deduct ~5 per abnormal test).
+7. overall_status: "Normal" if all tests normal, otherwise "Attention Required".
+8. summary: 2–3 personalized sentences about overall health based on the results.
 
 RESPOND WITH VALID JSON ONLY — NO EXTRA TEXT, NO MARKDOWN:
 {{
@@ -112,9 +115,10 @@ RESPOND WITH VALID JSON ONLY — NO EXTRA TEXT, NO MARKDOWN:
       "value": "value as string",
       "unit": "unit",
       "status": "Normal/Low/High",
-      "reason": "Medical explanation why it is normal/abnormal.",
-      "suggestion": "Actionable advice for the patient.",
-      "remark": "One-sentence summary of reason + suggestion."
+      "simple_explanation": "Simple explanation of the test term",
+      "reason": "Possible reasons why it is abnormal.",
+      "suggestion": "Good suggestions for improvement.",
+      "remark": "One-sentence summary."
     }}
   ]
 }}"""
@@ -151,6 +155,7 @@ RESPOND WITH VALID JSON ONLY — NO EXTRA TEXT, NO MARKDOWN:
             item["value"]      = str(item.get("value", "")).strip()
             item["unit"]       = str(item.get("unit", "")).strip()
             item["status"]     = str(item.get("status", "Normal")).strip().capitalize()
+            item["simple_explanation"] = str(item.get("simple_explanation", "")).strip()
             item["reason"]     = str(item.get("reason", "")).strip()
             item["suggestion"] = str(item.get("suggestion", "")).strip()
             # remark = combined for frontend display (backward-compatible)
@@ -158,10 +163,11 @@ RESPOND WITH VALID JSON ONLY — NO EXTRA TEXT, NO MARKDOWN:
 
             # Optional translation
             if lang != "en":
-                item["test_translated"]       = translate_text(item["test"], lang)
-                item["remark_translated"]     = translate_text(item["remark"], lang)
-                item["reason_translated"]     = translate_text(item["reason"], lang)
-                item["suggestion_translated"] = translate_text(item["suggestion"], lang)
+                item["test_translated"]               = translate_text(item["test"], lang)
+                item["simple_explanation_translated"] = translate_text(item["simple_explanation"], lang)
+                item["remark_translated"]             = translate_text(item["remark"], lang)
+                item["reason_translated"]             = translate_text(item["reason"], lang)
+                item["suggestion_translated"]         = translate_text(item["suggestion"], lang)
 
         # ── Build translated summary ─────────────────────────────────────────
         summary_translated = None
@@ -215,10 +221,11 @@ def translate_result(data, target_lang):
     new_tests = []
     for item in (data.get("tests") or []):
         ni = item.copy()
-        ni["test_translated"]       = translate_text(item.get("test", ""), target_lang)
-        ni["remark_translated"]     = translate_text(item.get("remark", ""), target_lang)
-        ni["reason_translated"]     = translate_text(item.get("reason", ""), target_lang)
-        ni["suggestion_translated"] = translate_text(item.get("suggestion", ""), target_lang)
+        ni["test_translated"]               = translate_text(item.get("test", ""), target_lang)
+        ni["simple_explanation_translated"] = translate_text(item.get("simple_explanation", ""), target_lang)
+        ni["remark_translated"]             = translate_text(item.get("remark", ""), target_lang)
+        ni["reason_translated"]             = translate_text(item.get("reason", ""), target_lang)
+        ni["suggestion_translated"]         = translate_text(item.get("suggestion", ""), target_lang)
         new_tests.append(ni)
 
     new_data["tests"] = new_tests

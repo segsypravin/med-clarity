@@ -35,6 +35,7 @@ export const translations = {
             normal: 'Normal',
             moderate: 'Moderate',
             high_risk: 'High Risk',
+            profile: 'My Profile',
             mock_summary: 'Your blood test results look great. Hemoglobin and WBC levels are within normal range.',
         },
         dashboard: {
@@ -279,6 +280,26 @@ export const translations = {
             error_failed: 'Failed to analyze scan.',
             error_unexpected: 'An unexpected error occurred during analysis.'
         },
+        profile: {
+            title: 'Medical Profile',
+            subtitle: 'Manage your personal and medical information for better health insights.',
+            personal_details: 'Personal Details',
+            medical_details: 'Medical Information',
+            full_name: 'Full Name',
+            age: 'Age',
+            gender: 'Gender',
+            blood_group: 'Blood Group',
+            height: 'Height (cm)',
+            weight: 'Weight (kg)',
+            allergies: 'Allergies',
+            chronic_conditions: 'Chronic Conditions',
+            save_profile: 'Save Profile',
+            profile_updated: 'Profile updated successfully!',
+            profile_error: 'Failed to update profile.',
+            male: 'Male',
+            female: 'Female',
+            other: 'Other'
+        },
         login: {
             welcome: 'Welcome back',
             sign_in_to_access: 'Sign in to access your health dashboard.',
@@ -345,6 +366,7 @@ export const translations = {
             normal: 'सामान्य',
             moderate: 'मध्यम',
             high_risk: 'उच्च जोखिम',
+            profile: 'मेरी प्रोफाइल',
             mock_summary: 'आपके रक्त परीक्षण के परिणाम अच्छे दिख रहे हैं। हीमोग्लोबिन और WBC स्तर सामान्य सीमा के भीतर हैं।',
         },
         dashboard: {
@@ -569,6 +591,26 @@ export const translations = {
             error_failed: 'स्कैन का विश्लेषण करने में विफल।',
             error_unexpected: 'विश्लेषण के दौरान एक अप्रत्याशित त्रुटि हुई।'
         },
+        profile: {
+            title: 'मेडिकल प्रोफाइल',
+            subtitle: 'बेहतर स्वास्थ्य अंतर्दृष्टि के लिए अपनी व्यक्तिगत और चिकित्सा जानकारी प्रबंधित करें।',
+            personal_details: 'व्यक्तिगत विवरण',
+            medical_details: 'चिकित्सा जानकारी',
+            full_name: 'पूरा नाम',
+            age: 'आयु',
+            gender: 'लिंग',
+            blood_group: 'रक्त समूह',
+            height: 'ऊंचाई (सेमी)',
+            weight: 'वजन (किग्रा)',
+            allergies: 'एलर्जी',
+            chronic_conditions: 'पुरानी बीमारियां',
+            save_profile: 'प्रोफाइल सहेजें',
+            profile_updated: 'प्रोफाइल सफलतापूर्वक अपडेट की गई!',
+            profile_error: 'प्रोफाइल अपडेट करने में विफल।',
+            male: 'पुरुष',
+            female: 'महिला',
+            other: 'अन्य'
+        },
         login: {
             welcome: 'वापसी पर स्वागत है',
             sign_in_to_access: 'अपने स्वास्थ्य डैशबोर्ड तक पहुंचने के लिए साइन इन करें।',
@@ -655,6 +697,7 @@ export const translations = {
             normal: 'सामान्य',
             moderate: 'मध्यम',
             high_risk: 'उच्च जोखीम',
+            profile: 'माझी प्रोफाइल',
             mock_summary: 'तुमच्या रक्त चाचणीचे निकाल चांगले दिसत आहेत. हिमोग्लोबिन आणि WBC पातळी सामान्य मर्यादेत आहे.',
         },
         dashboard: {
