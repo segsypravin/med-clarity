@@ -5,6 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import { useLanguage } from '../context/LanguageContext';
 import { auth } from '../firebase';
 import config from '../config';
+import LoadingDistraction from './LoadingDistraction';
 
 const ACCEPTED_TYPES = {
     'application/pdf': { label: 'PDF Report', icon: FileText },
@@ -13,10 +14,11 @@ const ACCEPTED_TYPES = {
     'image/jpg': { label: 'Image / Scan', icon: Image },
 };
 
-export default function UploadArea({ onSuccess }) {
+export default function UploadArea({ onSuccess, externalStatus, onStatusChange }) {
     const { language, t } = useLanguage();
     const [file, setFile] = useState(null);
-    const [status, setStatus] = useState('idle');
+    const [internalStatus, setInternalStatus] = useState('idle');
+    const status = externalStatus || internalStatus;
     const [message, setMessage] = useState('');
     const [isDragActive, setIsDragActive] = useState(false);
     const fileInputRef = useRef(null);
@@ -35,7 +37,18 @@ export default function UploadArea({ onSuccess }) {
         if (e.target.files?.[0]) pickFile(e.target.files[0]);
     };
 
-    const pickFile = (f) => { setFile(f); setStatus('idle'); setMessage(''); };
+    const pickFile = (f) => { 
+        setFile(f); 
+        const s = 'idle';
+        setInternalStatus(s);
+        onStatusChange?.(s);
+        setMessage(''); 
+    };
+
+    const setStatus = (s) => {
+        setInternalStatus(s);
+        onStatusChange?.(s);
+    };
 
     const handleUpload = async () => {
         if (!file) return;
@@ -118,7 +131,13 @@ export default function UploadArea({ onSuccess }) {
         }
     };
 
-    const reset = () => { setFile(null); setStatus('idle'); setMessage(''); };
+    const reset = () => { 
+        setFile(null); 
+        const s = 'idle';
+        setInternalStatus(s);
+        onStatusChange?.(s);
+        setMessage(''); 
+    };
 
     const FileIcon = file ? (ACCEPTED_TYPES[file.type]?.icon ?? FileText) : null;
 
@@ -127,46 +146,47 @@ export default function UploadArea({ onSuccess }) {
             {/* Drop zone */}
             <div
                 className={`upload-area${isDragActive ? ' drag-active' : ''}`}
-                onDragOver={handleDragOver}
-                onDragLeave={handleDragLeave}
-                onDrop={handleDrop}
-                onClick={() => !file && fileInputRef.current?.click()}
-                style={{ cursor: file ? 'default' : 'pointer' }}
-            >
-                <input ref={fileInputRef} type="file" accept="image/*,.pdf" style={{ display: 'none' }} onChange={handleFileSelect} />
+                    onDragOver={handleDragOver}
+                    onDragLeave={handleDragLeave}
+                    onDrop={handleDrop}
+                    onClick={() => !file && fileInputRef.current?.click()}
+                    style={{ cursor: file ? 'default' : 'pointer' }}
+                >
+                    <input ref={fileInputRef} type="file" accept="image/*,.pdf" style={{ display: 'none' }} onChange={handleFileSelect} />
 
-                {file ? (
-                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem' }}>
-                        <div style={{
-                            width: 60, height: 60, background: 'var(--primary-light)',
-                            borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                            color: 'var(--primary)', marginBottom: '0.5rem',
-                        }}>
-                            <FileIcon size={28} />
+                    {file ? (
+                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem' }}>
+                            <div style={{
+                                width: 60, height: 60, background: 'var(--primary-light)',
+                                borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                color: 'var(--primary)', marginBottom: '0.5rem',
+                            }}>
+                                <FileIcon size={28} />
+                            </div>
+                            <p style={{ fontWeight: '600', fontSize: '1rem' }}>{file.name}</p>
+                            <p className="text-muted text-sm">
+                                {ACCEPTED_TYPES[file.type]?.label ?? 'File'} · {(file.size / 1024 / 1024).toFixed(2)} MB
+                            </p>
+                            <button className="btn btn-ghost btn-sm" style={{ marginTop: '0.5rem', color: 'var(--error)' }} onClick={(e) => { e.stopPropagation(); reset(); }}>
+                                <X size={14} /> {t('upload.remove')}
+                            </button>
                         </div>
-                        <p style={{ fontWeight: '600', fontSize: '1rem' }}>{file.name}</p>
-                        <p className="text-muted text-sm">
-                            {ACCEPTED_TYPES[file.type]?.label ?? 'File'} · {(file.size / 1024 / 1024).toFixed(2)} MB
-                        </p>
-                        <button className="btn btn-ghost btn-sm" style={{ marginTop: '0.5rem', color: 'var(--error)' }} onClick={(e) => { e.stopPropagation(); reset(); }}>
-                            <X size={14} /> {t('upload.remove')}
-                        </button>
-                    </div>
-                ) : (
-                    <div>
-                        <div className="upload-icon" style={{ display: 'flex', justifyContent: 'center' }}>
-                            <Upload size={44} />
+                    ) : (
+                        <div>
+                            <div className="upload-icon" style={{ display: 'flex', justifyContent: 'center' }}>
+                                <Upload size={44} />
+                            </div>
+                            <p style={{ fontWeight: '600', fontSize: '1.1rem', marginBottom: '0.4rem' }}>
+                                {t('upload.dropzone_title')}
+                            </p>
+                            <p className="text-muted text-sm">{t('upload.dropzone_subtitle')}</p>
+                            <button className="btn btn-outline" style={{ marginTop: '1.25rem' }} onClick={() => fileInputRef.current?.click()}>
+                                {t('upload.browse')}
+                            </button>
                         </div>
-                        <p style={{ fontWeight: '600', fontSize: '1.1rem', marginBottom: '0.4rem' }}>
-                            {t('upload.dropzone_title')}
-                        </p>
-                        <p className="text-muted text-sm">{t('upload.dropzone_subtitle')}</p>
-                        <button className="btn btn-outline" style={{ marginTop: '1.25rem' }} onClick={() => fileInputRef.current?.click()}>
-                            {t('upload.browse')}
-                        </button>
-                    </div>
-                )}
-            </div>
+                    )}
+                </div>
+
 
             {/* Action / feedback */}
             <div style={{ marginTop: '1.25rem' }}>
@@ -176,11 +196,6 @@ export default function UploadArea({ onSuccess }) {
                     </button>
                 )}
 
-                {status === 'uploading' && (
-                    <button className="btn btn-primary btn-lg" style={{ width: '100%' }} disabled>
-                        <Spinner size={18} /> {message}
-                    </button>
-                )}
 
                 {status === 'success' && (
                     <div className="animate-fade-up">
