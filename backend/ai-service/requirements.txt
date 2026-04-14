@@ -8,3 +8,8 @@ google-cloud-storage
 google-genai
 google-cloud-translate
 python-dotenv
+numpy
+tensorflow
+opencv-python
+easyocr
+ollama

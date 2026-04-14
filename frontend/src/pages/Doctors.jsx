@@ -1,16 +1,16 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import { MapPin, Star, Phone, Clock, Loader, AlertCircle } from 'lucide-react';
 import { Badge } from '../components/ui/index.jsx';
 import { useLanguage } from '../context/LanguageContext';
-import { auth } from '../firebase';
-import config from '../config';
+import { useDoctors } from '../context/DoctorContext';
 
-const API_BASE = config.API_BASE;
+const SPECIALISTS = ['All', 'Cardiologist', 'Endocrinologist', 'Pulmonologist', 'Gastroenterologist', 'Oncologist', 'General Physician'];
 
 export default function Doctors() {
     const { t } = useLanguage();
     const location = useLocation();
+    const { doctors: cachedDoctors, loading, error, refresh } = useDoctors();
     
     // Read initial filter from URL query param
     const queryParams = new URLSearchParams(location.search);
@@ -18,59 +18,6 @@ export default function Doctors() {
     
     const [filter, setFilter] = useState(initialFilter);
     const [search, setSearch] = useState('');
-    const [doctors, setDoctors] = useState([]);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState(null);
-    const [userCoords, setUserCoords] = useState(null);
-
-    const SPECIALISTS = ['All', 'Cardiologist', 'Endocrinologist', 'Pulmonologist', 'Gastroenterologist', 'Oncologist', 'General Physician'];
-
-    function haversineDistance(lat1, lon1, lat2, lon2) {
-        const toRad = (deg) => (deg * Math.PI) / 180;
-        const R = 6371; // Earth's radius in km
-        const dLat = toRad(lat2 - lat1);
-        const dLon = toRad(lon2 - lon1);
-        const a =
-            Math.sin(dLat / 2) ** 2 +
-            Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon / 2) ** 2;
-        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-        return R * c;
-    }
-
-    // Move mapPlaceToDoctor inside to use t()
-    const mapPlaceToDoctor = useCallback((place, userLat, userLng) => {
-        const placeLat = place.geometry?.location?.lat;
-        const placeLng = place.geometry?.location?.lng;
-
-        let distance = null;
-        if (placeLat != null && placeLng != null && userLat != null && userLng != null) {
-            distance = haversineDistance(userLat, userLng, placeLat, placeLng);
-        }
-
-        const nameParts = (place.name || '').split(' ').filter(Boolean);
-        const avatar = nameParts.length >= 2
-            ? (nameParts[0][0] + nameParts[1][0]).toUpperCase()
-            : (nameParts[0] || 'Dr')[0].toUpperCase();
-
-        const simulatedRating = (Math.random() * (5.0 - 4.0) + 4.0).toFixed(1);
-        const simulatedReviews = Math.floor(Math.random() * (500 - 50 + 1) + 50);
-        const timingOptions = ['09:00 AM - 05:00 PM', '10:00 AM - 08:00 PM', '08:30 AM - 06:30 PM', '24 Hours'];
-        const simulatedHours = timingOptions[Math.floor(Math.random() * timingOptions.length)];
-
-        return {
-            id: place.place_id,
-            name: place.name || t('doctors.unknown_doctor'),
-            specialty: place.types?.includes('doctor') ? 'Doctor' : (place.types?.[0] || 'Specialist'),
-            location: place.vicinity || t('doctors.address_unavailable'),
-            rating: simulatedRating,
-            reviews: simulatedReviews,
-            hours: simulatedHours,
-            distance: distance != null ? `${distance.toFixed(1)} km` : 'N/A',
-            available: true,
-            phone: place.formatted_phone_number || null,
-            avatar,
-        };
-    }, [t]);
 
     // ── Booking Modal State ───────────────────────────────────────────────────
     const [bookingDoctor, setBookingDoctor] = useState(null);
@@ -86,78 +33,22 @@ export default function Doctors() {
         setBookingDoctor(null);
     };
 
-    // ── Get user location on mount ────────────────────────────────────────────
-    useEffect(() => {
-        if (!navigator.geolocation) {
-            setError(t('doctors.geolocation_error'));
-            setLoading(false);
-            return;
-        }
-
-        navigator.geolocation.getCurrentPosition(
-            (pos) => {
-                setUserCoords({ lat: pos.coords.latitude, lng: pos.coords.longitude });
-            },
-            (err) => {
-                console.error('[Geolocation]', err.message);
-                setError(t('doctors.location_denied'));
-                setLoading(false);
-            },
-            { enableHighAccuracy: true, timeout: 10000 }
-        );
-    }, [t]);
-
-    // ── Fetch doctors from backend ────────────────────────────────────────────
-    const fetchDoctors = useCallback(async (lat, lng, specialization) => {
-        setLoading(true);
-        setError(null);
-
-        try {
-            const params = new URLSearchParams({ lat, lng });
-            if (specialization && specialization !== 'All') {
-                params.set('specialization', specialization);
+    // ── Client-side search filter on top of cached results ───────────────────
+    const displayed = cachedDoctors.filter((d) => {
+        // Filter by specialty if not 'All'
+        if (filter !== 'All' && d.specialty !== filter) {
+            // Check if it's a generic 'Doctor' or 'Specialist' and if the query filter matches their name/types?
+            // Actually, the backend currently returns generic 'healthcare' places.
+            // For now, if user picks a filter, we show doctors that match that specialty string.
+            // If the cached results don't have that specific specialty string in 'specialty' field, 
+            // they might be filtered out. 
+            // However, the current backend doesn't provide fine-grained specialty.
+            // Let's allow the filter to be a fuzzy match or just trust the client-side specialization logic.
+            if (!d.specialty.toLowerCase().includes(filter.toLowerCase()) && d.specialty !== 'Doctor' && d.specialty !== 'Specialist') {
+                return false;
             }
-
-            const token = auth.currentUser ? await auth.currentUser.getIdToken() : '';
-            const res = await fetch(`${API_BASE}/api/get-doctors?${params}`, {
-                headers: { ...(token && { Authorization: `Bearer ${token}` }) }
-            });
-            const data = await res.json();
-
-            if (!res.ok || !data.success) {
-                throw new Error(data.message || t('doctors.fetch_error'));
-            }
-
-            const mapped = (data.results || []).map((place) =>
-                mapPlaceToDoctor(place, lat, lng)
-            );
-
-            // Sort by distance (closest first)
-            mapped.sort((a, b) => {
-                const distA = parseFloat(a.distance) || Infinity;
-                const distB = parseFloat(b.distance) || Infinity;
-                return distA - distB;
-            });
-
-            setDoctors(mapped);
-        } catch (err) {
-            console.error('[fetchDoctors]', err);
-            setError(err.message);
-            setDoctors([]);
-        } finally {
-            setLoading(false);
         }
-    }, [mapPlaceToDoctor, t]);
 
-    // ── Refetch when coords arrive or filter changes ──────────────────────────
-    useEffect(() => {
-        if (userCoords) {
-            fetchDoctors(userCoords.lat, userCoords.lng, filter);
-        }
-    }, [userCoords, filter, fetchDoctors]);
-
-    // ── Client-side search filter on top of fetched results ───────────────────
-    const displayed = doctors.filter((d) => {
         const matchSearch =
             d.name.toLowerCase().includes(search.toLowerCase()) ||
             d.specialty.toLowerCase().includes(search.toLowerCase()) ||
@@ -171,6 +62,11 @@ export default function Doctors() {
                 <div className="page-header-left">
                     <h1>{t('doctors.title')}</h1>
                     <p>{t('doctors.subtitle')}</p>
+                </div>
+                <div className="page-header-right">
+                    <button className="btn btn-outline btn-sm" onClick={refresh} disabled={loading}>
+                        <Clock size={14} /> {loading ? t('common.loading') : t('common.refresh') || 'Refresh'}
+                    </button>
                 </div>
             </div>
 

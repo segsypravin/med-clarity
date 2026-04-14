@@ -48,6 +48,7 @@ export const translations = {
             lipid_profile: 'Lipid Profile',
             profile: 'My Profile',
             mock_summary: 'Your blood test results look great. Hemoglobin and WBC levels are within normal range.',
+            refresh: 'Refresh',
         },
         dashboard: {
             title: 'Health Dashboard',
@@ -389,6 +390,7 @@ export const translations = {
             lipid_profile: 'लिपिड प्रोफाइल',
             profile: 'मेरी प्रोफाइल',
             mock_summary: 'आपके रक्त परीक्षण के परिणाम अच्छे दिख रहे हैं। हीमोग्लोबिन और WBC स्तर सामान्य सीमा के भीतर हैं।',
+            refresh: 'रिफ्रेश करें',
         },
         dashboard: {
             title: 'स्वास्थ्य डैशबोर्ड',
@@ -730,6 +732,7 @@ export const translations = {
             lipid_profile: 'लिपिड प्रोफाइल',
             profile: 'माझी प्रोफाइल',
             mock_summary: 'तुमच्या रक्त चाचणीचे निकाल चांगले दिसत आहेत. हिमोग्लोबिन आणि WBC पातळी सामान्य मर्यादेत आहे.',
+            refresh: 'रिफ्रेश करा',
         },
         dashboard: {
             title: 'आरोग्य डॅशबोर्ड',

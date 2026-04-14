@@ -54,6 +54,17 @@ def process_report(image_path_or_pdf, lang="en"):
         ai_output = analyze_health_report_gemini(raw_text)
         print(f"[TIMING] Gemini took {time.time()-t1:.1f}s")
         if ai_output:
+            # Normalize Gemini field names: 'name' -> 'test' for consistency
+            for test_item in ai_output.get("tests", []):
+                if "test" not in test_item and "name" in test_item:
+                    test_item["test"] = test_item["name"]
+            
+            # Apply translation if needed
+            if lang != "en":
+                from .ai_analysis import translate_result
+                ai_output = translate_result(ai_output, lang)
+            
+            ai_output["lang"] = lang
             print(f"[TIMING] TOTAL (GCP path): {time.time()-t0:.1f}s")
             print("GCP ANALYSIS COMPLETE!")
             return ai_output

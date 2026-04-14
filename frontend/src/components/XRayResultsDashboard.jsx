@@ -101,7 +101,7 @@ export default function XRayResultsDashboard({ record }) {
                 </div>
 
                 {/* Primary Prediction Card */}
-                <div className="card" style={{ flex: '2 1 400px', display: 'flex', flexDirection: 'column', padding: 0, overflow: 'hidden', border: `1px solid ${colors[extras.riskClass].border}`, borderRadius: '24px' }}>
+                <div className="card" style={{ flex: '1 1 350px', display: 'flex', flexDirection: 'column', padding: 0, overflow: 'hidden', border: `1px solid ${colors[extras.riskClass].border}`, borderRadius: '24px' }}>
                     <div style={{ background: colors[extras.riskClass].bg, padding: '2rem', borderBottom: `1px solid ${colors[extras.riskClass].border}`, display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
                         <div style={{ background: colors[extras.riskClass].text, borderRadius: '50%', width: 64, height: 64, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', boxShadow: `0 0 20px ${colors[extras.riskClass].text}` }}>
                             <StatusIcon size={32} />
@@ -132,7 +132,7 @@ export default function XRayResultsDashboard({ record }) {
                 </div>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '1.5rem' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1.5rem' }}>
                 {/* Doctor Recommendation */}
                 {extras.doctor && extras.riskLevel !== 'Low' && (
                     <motion.div 

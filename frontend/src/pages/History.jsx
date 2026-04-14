@@ -136,9 +136,9 @@ export default function History() {
                             <tbody>
                                 {filtered.map((r) => (
                                     <tr key={r.id}>
-                                        <td>
-                                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontWeight: '500' }}>
-                                                <FileText size={15} color="var(--text-muted)" /> {r.name}
+                                        <td className="max-w-200">
+                                            <div className="text-truncate" title={r.name} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontWeight: '500' }}>
+                                                <FileText size={15} color="var(--text-muted)" style={{ flexShrink: 0 }} /> {r.name}
                                             </div>
                                         </td>
                                         <td className="text-muted text-sm">{r.date}</td>

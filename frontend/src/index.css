@@ -479,6 +479,8 @@ body {
   overflow-x: auto;
   border-radius: var(--radius);
   border: 1px solid var(--border);
+  -webkit-overflow-scrolling: touch;
+  max-width: 100%;
 }
 
 table {
@@ -770,6 +772,16 @@ textarea:focus {
 
 .text-sm {
   font-size: 0.875rem;
+}
+
+.text-truncate {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.max-w-200 {
+  max-width: 200px;
 }
 
 .mb-1 {

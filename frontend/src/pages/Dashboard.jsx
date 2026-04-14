@@ -150,8 +150,10 @@ export default function Dashboard() {
                             <tbody>
                                 {recentReports.length > 0 ? recentReports.slice(0, 5).map((r) => (
                                     <tr key={r.id || r.name}>
-                                        <td style={{ fontWeight: '500', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                            <FileText size={15} color="var(--text-muted)" /> {r.name}
+                                        <td className="max-w-200">
+                                            <div className="text-truncate" title={r.name} style={{ fontWeight: '500', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                                <FileText size={15} color="var(--text-muted)" style={{ flexShrink: 0 }} /> {r.name}
+                                            </div>
                                         </td>
                                         <td className="text-muted">{r.date}</td>
                                         <td><Badge type="neutral">{r.type}</Badge></td>

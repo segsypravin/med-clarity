@@ -35,7 +35,7 @@ exports.getNearbyDoctors = async (req, res) => {
             categories: "healthcare",
             filter: `circle:${lng},${lat},5000`,
             bias: `proximity:${lng},${lat}`,
-            limit: "20",
+            limit: "50",
             apiKey,
         });
 

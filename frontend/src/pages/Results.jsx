@@ -341,11 +341,18 @@ export default function Results() {
     const [trendData, setTrendData] = useState(null);
     const [showTrendModal, setShowTrendModal] = useState(false);
 
-    const lastTranslatedLang = useRef(result?.lang || 'en');
+    const lastTranslatedLang = useRef(displayLang);
+    const resultRef = useRef(result);
+    
+    // Keep resultRef in sync with latest result
+    useEffect(() => {
+        resultRef.current = result;
+    }, [result]);
 
     useEffect(() => {
-        if (!result) return;
+        if (!resultRef.current) return;
         if (displayLang === lastTranslatedLang.current) return;
+        
         const translate = async () => {
             setIsTranslating(true);
             try {
@@ -353,12 +360,13 @@ export default function Results() {
                 const res = await fetch(`${config.API_BASE}/api/analyze/translate`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', ...(token && { Authorization: `Bearer ${token}` }) },
-                    body: JSON.stringify({ data: result, lang: displayLang })
+                    body: JSON.stringify({ data: resultRef.current, lang: displayLang })
                 });
                 if (!res.ok) throw new Error('Network error');
                 const json = await res.json();
+                // Backend wraps in { status: "success", result: {...} }
                 const translated = json.result || json;
-                if (translated?.summary) {
+                if (translated && (translated.summary || translated.summary_translated || translated.tests)) {
                     setResult(translated);
                     lastTranslatedLang.current = displayLang;
                 }
@@ -619,7 +627,7 @@ export default function Results() {
     };
 
     return (
-        <div style={{ paddingBottom: '80px' }}>
+        <div style={{ paddingBottom: '6rem' }}>
             <div className="page-header">
                 <div className="page-header-left">
                     <h1>{t('results.title')}</h1>

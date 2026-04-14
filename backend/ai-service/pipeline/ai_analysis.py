@@ -38,7 +38,7 @@ def generate_full_summary(summary, tests, lang="en"):
             full += "Key findings: "
 
         for t in troubles:
-            name = t.get("test_translated") if lang != "en" else t.get("test", "")
+            name = t.get("test_translated") if lang != "en" else (t.get("test") or t.get("name", ""))
             remark = t.get("remark_translated") if lang != "en" else t.get("remark", "")
             raw_status = t.get("status", "").lower()
             display_status = STATUS_MAP.get(lang, {}).get(raw_status, raw_status.capitalize())
@@ -209,11 +209,25 @@ def translate_result(data, target_lang):
     if not data:
         return {}
     if target_lang == "en":
-        if not data.get("full_report_summary"):
-            data["full_report_summary"] = generate_full_summary(
-                data.get("summary", ""), data.get("tests", [])
+        # Clear any previous translations, return original English data
+        new_data = data.copy()
+        new_data["summary_translated"] = None
+        new_data["lang"] = "en"
+        new_tests = []
+        for item in (data.get("tests") or []):
+            ni = item.copy()
+            ni["test_translated"] = None
+            ni["simple_explanation_translated"] = None
+            ni["remark_translated"] = None
+            ni["reason_translated"] = None
+            ni["suggestion_translated"] = None
+            new_tests.append(ni)
+        new_data["tests"] = new_tests
+        if not new_data.get("full_report_summary"):
+            new_data["full_report_summary"] = generate_full_summary(
+                new_data.get("summary", ""), new_tests
             )
-        return data
+        return new_data
 
     new_data = data.copy()
     new_data["summary_translated"] = translate_text(data.get("summary", ""), target_lang)
@@ -221,7 +235,9 @@ def translate_result(data, target_lang):
     new_tests = []
     for item in (data.get("tests") or []):
         ni = item.copy()
-        ni["test_translated"]               = translate_text(item.get("test", ""), target_lang)
+        # Handle both 'test' (from Ollama) and 'name' (from Gemini) field names
+        test_name = item.get("test") or item.get("name", "")
+        ni["test_translated"]               = translate_text(test_name, target_lang)
         ni["simple_explanation_translated"] = translate_text(item.get("simple_explanation", ""), target_lang)
         ni["remark_translated"]             = translate_text(item.get("remark", ""), target_lang)
         ni["reason_translated"]             = translate_text(item.get("reason", ""), target_lang)
